@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ title }} - CV Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    <style>
+        /* TradingView Inspired Dark Theme */
+        :root {
+            --tv-bg: #131722;
+            --tv-panel-bg: #1e222d;
+            --tv-border: #363a45;
+            --tv-text: #d1d4dc;
+            --tv-text-light: #b2b5be;
+            --tv-blue: #2962ff;
+            --tv-green: #089981;
+            --tv-red: #f23645;
+        }
+
+        body {
+            background-color: var(--tv-bg);
+            color: var(--tv-text);
+        }
+
+        .navbar {
+            background-color: var(--tv-panel-bg) !important;
+            border-bottom: 1px solid var(--tv-border);
+        }
+
+        .navbar-brand, .nav-link {
+            color: var(--tv-text-light) !important;
+        }
+
+        .nav-link:hover, .navbar-brand:hover {
+            color: #fff !important;
+        }
+
+        .card {
+            background-color: var(--tv-panel-bg);
+            border-color: var(--tv-border);
+        }
+
+        .card-header {
+            background-color: rgba(0,0,0,0.1);
+            border-bottom: 1px solid var(--tv-border);
+            color: var(--tv-text);
+            font-weight: 500;
+        }
+
+        .form-control, .form-select {
+            background-color: var(--tv-bg);
+            border-color: var(--tv-border);
+            color: var(--tv-text);
+        }
+
+        .form-control::placeholder {
+            color: var(--tv-text-light);
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--tv-bg);
+            border-color: var(--tv-blue);
+            color: var(--tv-text);
+            box-shadow: 0 0 0 0.25rem rgba(41, 98, 255, 0.2);
+        }
+        
+        .btn {
+             color: #fff;
+        }
+
+        .btn-primary {
+            background-color: var(--tv-blue);
+            border-color: var(--tv-blue);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: var(--tv-border);
+            border-color: var(--tv-border);
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b505c;
+            border-color: #4b505c;
+        }
+
+        .btn-success {
+            background-color: var(--tv-green);
+            border-color: var(--tv-green);
+        }
+
+        .btn-danger {
+            background-color: var(--tv-red);
+            border-color: var(--tv-red);
+        }
+
+        hr {
+            border-color: var(--tv-border);
+        }
+
+        /* Toast styling */
+        .toast-success { background-color: var(--tv-green) !important; }
+        .toast-error { background-color: var(--tv-red) !important; }
+        .toast-info { background-color: var(--tv-blue) !important; }
+
+        /* Tab styling */
+        .nav-tabs {
+            border-bottom-color: var(--tv-border);
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 0;
+            border: none;
+            color: var(--tv-text-light);
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: #fff;
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: transparent;
+            color: #fff;
+            border-bottom: 2px solid var(--tv-blue);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">CV Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    {% if current_user.is_anonymous %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                    </li>
+                    {% else %}
+                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('job_application') }}">New Application</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-info" role="alert" style="background-color: var(--tv-blue); border-color: var(--tv-blue);">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "5000"
+        };
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

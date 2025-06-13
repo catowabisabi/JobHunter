@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% set title = "New Job Application" %}
+
+{% block content %}
+<h2 class="mb-4">New Job Application</h2>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Submit Job Information</h5>
+    </div>
+    <div class="card-body">
+        <form id="jobForm">
+            <div class="form-group mb-3">
+                <label for="jobDescription">Job Description</label>
+                <textarea class="form-control" id="jobDescription" rows="10" required
+                    placeholder="Please paste the full job description, including:&#10;- Company Introduction&#10;- Position Title&#10;- Responsibilities&#10;- Required Qualifications&#10;- Location&#10;- Other relevant information"></textarea>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    <span id="button-text">Generate Application Documents</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mt-4" id="resultSection" style="display: none;">
+    <h3 class="mb-3">Generated Content Preview</h3>
+    
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="cv-tab" data-bs-toggle="tab" data-bs-target="#cv-preview-pane" type="button" role="tab">CV</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="cl-en-tab" data-bs-toggle="tab" data-bs-target="#cl-en-preview-pane" type="button" role="tab">Cover Letter (EN)</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="cl-zh-tab" data-bs-toggle="tab" data-bs-target="#cl-zh-preview-pane" type="button" role="tab">Cover Letter (ZH)</button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="cv-preview-pane" role="tabpanel">
+                    <div id="cv-md-preview"></div>
+                </div>
+                <div class="tab-pane fade" id="cl-en-preview-pane" role="tabpanel">
+                    <div id="cover-letter-en-md-preview"></div>
+                </div>
+                <div class="tab-pane fade" id="cl-zh-preview-pane" role="tabpanel">
+                    <div id="cover-letter-zh-md-preview"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4" id="downloadSection">
+        <h4 class="mb-3">Download as PDF</h4>
+        <div class="list-group">
+            <a href="#" class="list-group-item list-group-item-action" id="cvLink" target="_blank" download>
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Customized CV</h5>
+                    <small>Download PDF</small>
+                </div>
+                <p class="mb-1">CV optimized for the job requirements.</p>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" id="coverLetterEnLink" target="_blank" download>
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">English Cover Letter</h5>
+                    <small>Download PDF</small>
+                </div>
+                <p class="mb-1">Cover letter written for the position in English.</p>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" id="coverLetterZhLink" target="_blank" download>
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Chinese Cover Letter</h5>
+                    <small>Download PDF</small>
+                </div>
+                <p class="mb-1">Cover letter written for the position in Chinese.</p>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+document.getElementById('jobForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    const buttonText = document.getElementById('button-text');
+    const resultSection = document.getElementById('resultSection');
+    
+    // UI elements for preview
+    const cvPreview = document.getElementById('cv-md-preview');
+    const clEnPreview = document.getElementById('cover-letter-en-md-preview');
+    const clZhPreview = document.getElementById('cover-letter-zh-md-preview');
+
+    // Disable button and show spinner
+    submitBtn.disabled = true;
+    spinner.classList.remove('d-none');
+    buttonText.textContent = 'Generating...';
+    resultSection.style.display = 'none';
+    
+    fetch('/submit_job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            job_description: document.getElementById('jobDescription').value
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw new Error(err.message || 'Server Error') });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            // Populate preview areas with rendered HTML from Markdown
+            cvPreview.innerHTML = marked.parse(data.markdown.cv_md);
+            clEnPreview.innerHTML = marked.parse(data.markdown.cover_letter_en_md);
+            clZhPreview.innerHTML = marked.parse(data.markdown.cover_letter_zh_md);
+
+            // Update PDF download links
+            if (data.files.cv_pdf) {
+                document.getElementById('cvLink').href = data.files.cv_pdf;
+            }
+            if (data.files.cover_letter_en_pdf) {
+                document.getElementById('coverLetterEnLink').href = data.files.cover_letter_en_pdf;
+            }
+            if (data.files.cover_letter_zh_pdf) {
+                document.getElementById('coverLetterZhLink').href = data.files.cover_letter_zh_pdf;
+            }
+            
+            resultSection.style.display = 'block';
+            toastr.success('Documents generated successfully!');
+        } else {
+            toastr.error(data.message || 'Generation failed. Please try again later.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Generation failed: ' + error.message);
+    })
+    .finally(() => {
+        // Re-enable button and hide spinner
+        submitBtn.disabled = false;
+        spinner.classList.add('d-none');
+        buttonText.textContent = 'Generate Application Documents';
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% set title = "CV Management" %}
+
+{% block content %}
+<h1 class="mb-4">CV and Application Management</h1>
+
+<form id="cvForm">
+    <!-- Personal Info -->
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Personal Information</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6"><div class="form-group"><label for="full_name">Full Name</label><input type="text" class="form-control" id="full_name" value="{{ personal_info.full_name if personal_info else '' }}"></div></div>
+                <div class="col-md-6"><div class="form-group"><label for="preferred_name">Preferred Name</label><input type="text" class="form-control" id="preferred_name" value="{{ personal_info.preferred_name if personal_info else '' }}"></div></div>
+            </div>
+            <div class="row">
+                <div class="col-md-6"><div class="form-group"><label for="email">Email</label><input type="email" class="form-control" id="email" value="{{ personal_info.email if personal_info else '' }}"></div></div>
+                <div class="col-md-6"><div class="form-group"><label for="phone">Phone</label><input type="tel" class="form-control" id="phone" value="{{ personal_info.phone if personal_info else '' }}"></div></div>
+            </div>
+            <div class="row">
+                <div class="col-md-6"><div class="form-group"><label for="location">Location</label><input type="text" class="form-control" id="location" value="{{ personal_info.location if personal_info else '' }}"></div></div>
+                <div class="col-md-6"><div class="form-group"><label for="references">References</label><input type="text" class="form-control" id="references" value="{{ personal_info.references if personal_info else '' }}"></div></div>
+            </div>
+            <div class="form-group"><label for="summary">Summary</label><textarea class="form-control" id="summary" rows="3">{{ personal_info.summary if personal_info else '' }}</textarea></div>
+            <div class="form-group"><label for="design_philosophy">Design Philosophy</label><textarea class="form-control" id="design_philosophy" rows="3">{{ personal_info.design_philosophy if personal_info else '' }}</textarea></div>
+        </div>
+    </div>
+
+    <!-- Online Presence -->
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Online Presence</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6"><input type="url" class="form-control" id="portfolio" placeholder="Portfolio" value="{{ personal_info.portfolio if personal_info else '' }}"></div>
+                <div class="col-md-6"><input type="url" class="form-control" id="behance_portfolio" placeholder="Behance" value="{{ personal_info.behance_portfolio if personal_info else '' }}"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6"><input type="url" class="form-control" id="github" placeholder="GitHub" value="{{ personal_info.github if personal_info else '' }}"></div>
+                <div class="col-md-6"><input type="url" class="form-control" id="linkedin" placeholder="LinkedIn" value="{{ personal_info.linkedin if personal_info else '' }}"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Text Areas for Lists -->
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">List Data (one item per line)</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6"><label for="title">Titles</label><textarea class="form-control" id="title" rows="4">{{ (personal_info.title | join('\n')) if personal_info and personal_info.title else '' }}</textarea></div>
+                <div class="col-md-6"><label for="willing_to_relocate">Willing to Relocate</label><textarea class="form-control" id="willing_to_relocate" rows="4">{{ (personal_info.willing_to_relocate | join('\n')) if personal_info and personal_info.willing_to_relocate else '' }}</textarea></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6"><label for="professional_attributes">Professional Attributes</label><textarea class="form-control" id="professional_attributes" rows="4">{{ (personal_info.professional_attributes | join('\n')) if personal_info and personal_info.professional_attributes else '' }}</textarea></div>
+                <div class="col-md-6"><label for="possible_titles">Possible Titles</label><textarea class="form-control" id="possible_titles" rows="4">{{ (personal_info.possible_titles | join('\n')) if personal_info and personal_info.possible_titles else '' }}</textarea></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Fields -->
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Dynamic Data</h5></div>
+        <div class="card-body">
+            <!-- Languages -->
+            <h6 class="card-subtitle mb-2 text-muted">Languages</h6>
+            <div id="languagesContainer">
+                {% if personal_info and personal_info.languages %}
+                {% for lang in personal_info.languages %}
+                <div class="dynamic-entry row mb-2">
+                    <div class="col-5"><input type="text" class="form-control" name="lang_name" placeholder="Language" value="{{ lang.name }}"></div>
+                    <div class="col-5"><input type="text" class="form-control" name="lang_proficiency" placeholder="Proficiency" value="{{ lang.proficiency }}"></div>
+                    <div class="col-2"><button type="button" class="btn btn-danger btn-sm" onclick="removeEntry(this)">Remove</button></div>
+                </div>
+                {% endfor %}{% endif %}
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="addLanguage()">Add Language</button>
+            <hr>
+            <!-- Skills -->
+            <h6 class="card-subtitle mt-3 mb-2 text-muted">Skills</h6>
+            <div id="skillsContainer">
+                {% if personal_info and personal_info.skills %}
+                {% for category, skill_list in personal_info.skills.items() %}
+                <div class="dynamic-category-entry border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <input type="text" class="form-control" name="skill_category_name" placeholder="Skill Category" value="{{ category }}">
+                        <button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeEntry(this)">Remove Category</button>
+                    </div>
+                    <div class="skills-list">
+                        {% for skill in skill_list %}
+                        <div class="dynamic-entry row mb-2">
+                            <div class="col-5"><input type="text" class="form-control" name="skill_name" placeholder="Skill Name" value="{{ skill.name }}"></div>
+                            <div class="col-5"><input type="number" class="form-control" name="skill_exp" placeholder="Years of Experience" value="{{ skill.experience_years }}"></div>
+                            <div class="col-2"><button type="button" class="btn btn-danger btn-sm" onclick="removeEntry(this)">Remove</button></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-info btn-sm mt-2" onclick="addSkill(this)">Add Skill</button>
+                </div>
+                {% endfor %}{% endif %}
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="addSkillCategory()">Add Skill Category</button>
+        </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0">Work Experience</h5><button type="button" class="btn btn-primary btn-sm" onclick="addExperience()">Add Experience</button></div>
+        <div class="card-body" id="experienceContainer">
+            {% for exp in experiences %}
+            <div class="dynamic-category-entry border-bottom pb-3 mb-3">
+                <input type="text" class="form-control mb-2" name="title" placeholder="Title" value="{{ exp.title }}" required>
+                <input type="text" class="form-control mb-2" name="company" placeholder="Company" value="{{ exp.company }}" required>
+                <div class="row">
+                    <div class="col-md-4"><input type="text" class="form-control" name="location" placeholder="Location" value="{{ exp.location }}"></div>
+                    <div class="col-md-4"><input type="text" class="form-control" name="period_start" placeholder="Start Date" value="{{ exp.period_start }}"></div>
+                    <div class="col-md-4"><input type="text" class="form-control" name="period_end" placeholder="End Date" value="{{ exp.period_end }}"></div>
+                </div>
+                <label class="mt-2">Responsibilities (one per line)</label>
+                <textarea class="form-control" name="responsibilities" rows="4">{{ (exp.responsibilities | join('\n')) if exp.responsibilities else '' }}</textarea>
+                <label class="mt-2">Highlights (one per line)</label>
+                <textarea class="form-control" name="highlights" rows="3">{{ (exp.highlights | join('\n')) if exp.highlights else '' }}</textarea>
+                <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removeEntry(this)">Delete</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Education -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center"><h5 class="mb-0">Education</h5><button type="button" class="btn btn-primary btn-sm" onclick="addEducation()">Add Education</button></div>
+        <div class="card-body" id="educationContainer">
+            {% for edu in education %}
+            <div class="dynamic-category-entry border-bottom pb-3 mb-3">
+                <input type="text" class="form-control mb-2" name="degree" placeholder="Degree" value="{{ edu.degree }}" required>
+                <input type="text" class="form-control mb-2" name="institution" placeholder="Institution" value="{{ edu.institution }}" required>
+                <div class="row">
+                    <div class="col-md-4"><input type="text" class="form-control" name="specialization" placeholder="Specialization" value="{{ edu.specialization }}"></div>
+                    <div class="col-md-4"><input type="text" class="form-control" name="location" placeholder="Location" value="{{ edu.location }}"></div>
+                    <div class="col-md-4"><input type="text" class="form-control" name="period" placeholder="Period" value="{{ edu.period }}"></div>
+                </div>
+                <label class="mt-2">Highlights (one per line)</label>
+                <textarea class="form-control" name="highlights" rows="3">{{ (edu.highlights | join('\n')) if edu.highlights else '' }}</textarea>
+                <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removeEntry(this)">Delete</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="text-center mb-4">
+        <button type="submit" class="btn btn-success btn-lg">Save All Data</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getListFromTextarea(element) {
+    return element.value.split('\n').map(s => s.trim()).filter(s => s);
+}
+
+document.getElementById('cvForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        personal_info: {
+            full_name: document.getElementById('full_name').value,
+            preferred_name: document.getElementById('preferred_name').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            location: document.getElementById('location').value,
+            references: document.getElementById('references').value,
+            summary: document.getElementById('summary').value,
+            design_philosophy: document.getElementById('design_philosophy').value,
+            portfolio: document.getElementById('portfolio').value,
+            behance_portfolio: document.getElementById('behance_portfolio').value,
+            github: document.getElementById('github').value,
+            linkedin: document.getElementById('linkedin').value,
+            title: getListFromTextarea(document.getElementById('title')),
+            willing_to_relocate: getListFromTextarea(document.getElementById('willing_to_relocate')),
+            professional_attributes: getListFromTextarea(document.getElementById('professional_attributes')),
+            possible_titles: getListFromTextarea(document.getElementById('possible_titles')),
+            languages: [],
+            skills: {},
+        },
+        experience: [],
+        education: []
+    };
+
+    // Collect Languages
+    document.querySelectorAll('#languagesContainer .dynamic-entry').forEach(entry => {
+        const name = entry.querySelector('[name="lang_name"]').value;
+        const proficiency = entry.querySelector('[name="lang_proficiency"]').value;
+        if (name) formData.personal_info.languages.push({ name, proficiency });
+    });
+
+    // Collect Skills
+    document.querySelectorAll('#skillsContainer .dynamic-category-entry').forEach(categoryEntry => {
+        const categoryName = categoryEntry.querySelector('[name="skill_category_name"]').value;
+        if (categoryName) {
+            formData.personal_info.skills[categoryName] = [];
+            categoryEntry.querySelectorAll('.skills-list .dynamic-entry').forEach(skillEntry => {
+                const name = skillEntry.querySelector('[name="skill_name"]').value;
+                const exp = skillEntry.querySelector('[name="skill_exp"]').value;
+                if (name) formData.personal_info.skills[categoryName].push({ name, experience_years: parseInt(exp) || 0 });
+            });
+        }
+    });
+    
+    // Collect Experience
+    document.querySelectorAll('#experienceContainer .dynamic-category-entry').forEach(entry => {
+        formData.experience.push({
+            title: entry.querySelector('[name="title"]').value,
+            company: entry.querySelector('[name="company"]').value,
+            location: entry.querySelector('[name="location"]').value,
+            period_start: entry.querySelector('[name="period_start"]').value,
+            period_end: entry.querySelector('[name="period_end"]').value,
+            responsibilities: getListFromTextarea(entry.querySelector('[name="responsibilities"]')),
+            highlights: getListFromTextarea(entry.querySelector('[name="highlights"]'))
+        });
+    });
+    
+    // Collect Education
+    document.querySelectorAll('#educationContainer .dynamic-category-entry').forEach(entry => {
+        formData.education.push({
+            degree: entry.querySelector('[name="degree"]').value,
+            institution: entry.querySelector('[name="institution"]').value,
+            specialization: entry.querySelector('[name="specialization"]').value,
+            location: entry.querySelector('[name="location"]').value,
+            period: entry.querySelector('[name="period"]').value,
+            highlights: getListFromTextarea(entry.querySelector('[name="highlights"]'))
+        });
+    });
+    
+    fetch('/save_cv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            toastr.success('Data saved successfully!');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            toastr.error('Save failed: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('An unexpected error occurred. Please check the browser console.');
+    });
+});
+
+function addDynamicEntry(containerId, template) {
+    const container = document.getElementById(containerId);
+    container.insertAdjacentHTML('beforeend', template);
+}
+
+function removeEntry(button) {
+    button.closest('.dynamic-entry, .dynamic-category-entry').remove();
+}
+
+function addLanguage() {
+    const template = `
+    <div class="dynamic-entry row mb-2">
+        <div class="col-5"><input type="text" class="form-control" name="lang_name" placeholder="Language"></div>
+        <div class="col-5"><input type="text" class="form-control" name="lang_proficiency" placeholder="Proficiency"></div>
+        <div class="col-2"><button type="button" class="btn btn-danger btn-sm" onclick="removeEntry(this)">Remove</button></div>
+    </div>`;
+    addDynamicEntry('languagesContainer', template);
+}
+
+function addSkillCategory() {
+    const template = `
+    <div class="dynamic-category-entry border rounded p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <input type="text" class="form-control" name="skill_category_name" placeholder="Skill Category">
+            <button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeEntry(this)">Remove Category</button>
+        </div>
+        <div class="skills-list"></div>
+        <button type="button" class="btn btn-info btn-sm mt-2" onclick="addSkill(this)">Add Skill</button>
+    </div>`;
+    addDynamicEntry('skillsContainer', template);
+}
+
+function addSkill(button) {
+    const skillsList = button.previousElementSibling;
+    const template = `
+    <div class="dynamic-entry row mb-2">
+        <div class="col-5"><input type="text" class="form-control" name="skill_name" placeholder="Skill Name"></div>
+        <div class="col-5"><input type="number" class="form-control" name="skill_exp" placeholder="Years of Experience" value="0"></div>
+        <div class="col-2"><button type="button" class="btn btn-danger btn-sm" onclick="removeEntry(this)">Remove</button></div>
+    </div>`;
+    skillsList.insertAdjacentHTML('beforeend', template);
+}
+
+function addExperience() {
+    const template = `
+    <div class="dynamic-category-entry border-bottom pb-3 mb-3">
+        <input type="text" class="form-control mb-2" name="title" placeholder="Title" required>
+        <input type="text" class="form-control mb-2" name="company" placeholder="Company" required>
+        <div class="row">
+            <div class="col-md-4"><input type="text" class="form-control" name="location" placeholder="Location"></div>
+            <div class="col-md-4"><input type="text" class="form-control" name="period_start" placeholder="Start Date"></div>
+            <div class="col-md-4"><input type="text" class="form-control" name="period_end" placeholder="End Date"></div>
+        </div>
+        <label class="mt-2">Responsibilities (one per line)</label>
+        <textarea class="form-control" name="responsibilities" rows="4"></textarea>
+        <label class="mt-2">Highlights (one per line)</label>
+        <textarea class="form-control" name="highlights" rows="3"></textarea>
+        <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removeEntry(this)">Delete</button>
+    </div>`;
+    addDynamicEntry('experienceContainer', template);
+}
+
+function addEducation() {
+    const template = `
+    <div class="dynamic-category-entry border-bottom pb-3 mb-3">
+        <input type="text" class="form-control mb-2" name="degree" placeholder="Degree" required>
+        <input type="text" class="form-control mb-2" name="institution" placeholder="Institution" required>
+        <div class="row">
+            <div class="col-md-4"><input type="text" class="form-control" name="specialization" placeholder="Specialization"></div>
+            <div class="col-md-4"><input type="text" class="form-control" name="location" placeholder="Location"></div>
+            <div class="col-md-4"><input type="text" class="form-control" name="period" placeholder="Period"></div>
+        </div>
+        <label class="mt-2">Highlights (one per line)</label>
+        <textarea class="form-control" name="highlights" rows="3"></textarea>
+        <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removeEntry(this)">Delete</button>
+    </div>`;
+    addDynamicEntry('educationContainer', template);
+}
+</script>
+{% endblock %}
