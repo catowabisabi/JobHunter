@@ -308,13 +308,65 @@ def submit_job():
     try:
         data = request.get_json()
         job_description = data.get('job_description')
-        job_source = data.get('job_source', 'unknown')  # Get job source from request
+        job_source = data.get('job_source', 'unknown')
 
         if not job_description:
             return jsonify({
                 'status': 'error',
                 'message': 'Job description is required'
             }), 400
+
+        # Get user's CV data
+        personal_info = PersonalInfo.query.first()
+        experiences = Experience.query.all()
+        education = Education.query.all()
+
+        if not personal_info:
+            return jsonify({
+                'status': 'error',
+                'message': 'Please complete your CV information first'
+            }), 400
+
+        # Build CV data dictionary
+        cv_data = {
+            "personal_info": {
+                "full_name": personal_info.full_name,
+                "preferred_name": personal_info.preferred_name,
+                "title": personal_info.title,
+                "email": personal_info.email,
+                "phone": personal_info.phone,
+                "location": personal_info.location,
+                "portfolio": personal_info.portfolio,
+                "behance_portfolio": personal_info.behance_portfolio,
+                "github": personal_info.github,
+                "linkedin": personal_info.linkedin,
+                "languages": personal_info.languages,
+                "skills": personal_info.skills,
+                "summary": personal_info.summary,
+                "design_philosophy": personal_info.design_philosophy,
+                "professional_attributes": personal_info.professional_attributes,
+                "willing_to_relocate": personal_info.willing_to_relocate,
+                "possible_titles": personal_info.possible_titles,
+                "references": personal_info.references
+            },
+            "experience": [{
+                "title": exp.title,
+                "company": exp.company,
+                "location": exp.location,
+                "period_start": exp.period_start,
+                "period_end": exp.period_end,
+                "responsibilities": exp.responsibilities,
+                "highlights": exp.highlights
+            } for exp in experiences],
+            "education": [{
+                "degree": edu.degree,
+                "institution": edu.institution,
+                "specialization": edu.specialization,
+                "location": edu.location,
+                "period": edu.period,
+                "highlights": edu.highlights
+            } for edu in education]
+        }
 
         # Create output directory if it doesn't exist
         output_dir = os.path.join(app.instance_path, 'output')
@@ -342,13 +394,9 @@ def submit_job():
 
         try:
             job_details_response = model.generate_content(job_details_prompt)
-            # Clean the response text before parsing
             cleaned_text = job_details_response.text.strip()
-            # Remove any markdown code block markers
             cleaned_text = re.sub(r'```json\s*|\s*```', '', cleaned_text)
-            # Remove any HTML tags
             cleaned_text = re.sub(r'<[^>]+>', '', cleaned_text)
-            # Fix any invalid JSON escape sequences
             cleaned_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', cleaned_text)
             
             try:
@@ -356,7 +404,6 @@ def submit_job():
             except json.JSONDecodeError as e:
                 logging.error(f"Failed to parse job details JSON: {e}")
                 logging.error(f"Cleaned text: {cleaned_text}")
-                # Create a basic job details structure if parsing fails
                 job_details = {
                     "company_name": "Unknown Company",
                     "position": "Unknown Position",
@@ -374,16 +421,24 @@ def submit_job():
 
         # Generate CV using Gemini
         cv_prompt = f"""
-        Create a professional CV optimized for this {job_source} job posting. The CV should:
+        Create a professional CV optimized for this {job_source} job posting. Use the following CV data and job details to create a targeted CV.
+
+        My CV Data:
+        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
+
+        Job Details:
+        {json.dumps(job_details, indent=2)}
+
+        Requirements:
         1. Highlight relevant skills and experiences that match the job requirements
         2. Use clear, professional language
         3. Include all necessary sections (Personal Info, Experience, Education, Skills)
         4. Be formatted in Markdown
-        5. Use actual content instead of placeholders
+        5. Use actual content from my CV data, no placeholders
         6. Be concise and impactful
-
-        Job Details:
-        {json.dumps(job_details, indent=2)}
+        7. Focus on achievements and results
+        8. Use bullet points for better readability
+        9. Include relevant keywords from the job description
 
         Respond with ONLY the Markdown content, no explanations or additional text.
         """
@@ -391,7 +446,6 @@ def submit_job():
         try:
             cv_response = model.generate_content(cv_prompt)
             cv_md = cv_response.text.strip()
-            # Remove any markdown code block markers
             cv_md = re.sub(r'```markdown\s*|\s*```', '', cv_md)
         except Exception as e:
             logging.error(f"Error generating CV: {e}")
@@ -402,16 +456,24 @@ def submit_job():
 
         # Generate English cover letter
         cl_en_prompt = f"""
-        Create a professional cover letter in English for this {job_source} job posting. The letter should:
-        1. Be addressed to the company
-        2. Highlight relevant qualifications and experiences
-        3. Show enthusiasm for the position
-        4. Be formatted in Markdown
-        5. Use actual content instead of placeholders
-        6. Be concise and impactful
+        Create a professional cover letter in English for this {job_source} job posting. Use the following CV data and job details to create a targeted cover letter.
+
+        My CV Data:
+        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
 
         Job Details:
         {json.dumps(job_details, indent=2)}
+
+        Requirements:
+        1. Be addressed to the company
+        2. Highlight relevant qualifications and experiences from my CV
+        3. Show enthusiasm for the position
+        4. Be formatted in Markdown
+        5. Use actual content from my CV data, no placeholders
+        6. Be concise and impactful
+        7. Focus on how my experience matches their requirements
+        8. Include specific examples from my work history
+        9. Show understanding of the company and role
 
         Respond with ONLY the Markdown content, no explanations or additional text.
         """
@@ -419,7 +481,6 @@ def submit_job():
         try:
             cl_en_response = model.generate_content(cl_en_prompt)
             cl_en_md = cl_en_response.text.strip()
-            # Remove any markdown code block markers
             cl_en_md = re.sub(r'```markdown\s*|\s*```', '', cl_en_md)
         except Exception as e:
             logging.error(f"Error generating English cover letter: {e}")
@@ -430,16 +491,25 @@ def submit_job():
 
         # Generate Chinese cover letter
         cl_zh_prompt = f"""
-        Create a professional cover letter in Traditional Chinese for this {job_source} job posting. The letter should:
-        1. Be addressed to the company
-        2. Highlight relevant qualifications and experiences
-        3. Show enthusiasm for the position
-        4. Be formatted in Markdown
-        5. Use actual content instead of placeholders
-        6. Be concise and impactful
+        Create a professional cover letter in Traditional Chinese for this {job_source} job posting. Use the following CV data and job details to create a targeted cover letter.
+
+        My CV Data:
+        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
 
         Job Details:
         {json.dumps(job_details, indent=2)}
+
+        Requirements:
+        1. Be addressed to the company
+        2. Highlight relevant qualifications and experiences from my CV
+        3. Show enthusiasm for the position
+        4. Be formatted in Markdown
+        5. Use actual content from my CV data, no placeholders
+        6. Be concise and impactful
+        7. Focus on how my experience matches their requirements
+        8. Include specific examples from my work history
+        9. Show understanding of the company and role
+        10. Use Traditional Chinese characters (繁體中文)
 
         Respond with ONLY the Markdown content, no explanations or additional text.
         """
@@ -447,7 +517,6 @@ def submit_job():
         try:
             cl_zh_response = model.generate_content(cl_zh_prompt)
             cl_zh_md = cl_zh_response.text.strip()
-            # Remove any markdown code block markers
             cl_zh_md = re.sub(r'```markdown\s*|\s*```', '', cl_zh_md)
         except Exception as e:
             logging.error(f"Error generating Chinese cover letter: {e}")
