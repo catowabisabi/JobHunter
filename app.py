@@ -325,8 +325,37 @@ def submit_job():
         Respond with ONLY the JSON object, no other text or explanations.
         """
 
-        job_details_response = model.generate_content(job_details_prompt)
-        job_details = json.loads(job_details_response.text)
+        try:
+            job_details_response = model.generate_content(job_details_prompt)
+            # Clean the response text before parsing
+            cleaned_text = job_details_response.text.strip()
+            # Remove any markdown code block markers
+            cleaned_text = re.sub(r'```json\s*|\s*```', '', cleaned_text)
+            # Remove any HTML tags
+            cleaned_text = re.sub(r'<[^>]+>', '', cleaned_text)
+            # Fix any invalid JSON escape sequences
+            cleaned_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', cleaned_text)
+            
+            try:
+                job_details = json.loads(cleaned_text)
+            except json.JSONDecodeError as e:
+                logging.error(f"Failed to parse job details JSON: {e}")
+                logging.error(f"Cleaned text: {cleaned_text}")
+                # Create a basic job details structure if parsing fails
+                job_details = {
+                    "company_name": "Unknown Company",
+                    "position": "Unknown Position",
+                    "location": "Unknown Location",
+                    "key_requirements": [],
+                    "preferred_qualifications": [],
+                    "company_description": "No description available"
+                }
+        except Exception as e:
+            logging.error(f"Error generating job details: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Error generating job details: {str(e)}'
+            }), 500
 
         # Generate CV using Gemini
         cv_prompt = f"""
@@ -344,8 +373,17 @@ def submit_job():
         Respond with ONLY the Markdown content, no explanations or additional text.
         """
 
-        cv_response = model.generate_content(cv_prompt)
-        cv_md = cv_response.text
+        try:
+            cv_response = model.generate_content(cv_prompt)
+            cv_md = cv_response.text.strip()
+            # Remove any markdown code block markers
+            cv_md = re.sub(r'```markdown\s*|\s*```', '', cv_md)
+        except Exception as e:
+            logging.error(f"Error generating CV: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Error generating CV: {str(e)}'
+            }), 500
 
         # Generate English cover letter
         cl_en_prompt = f"""
@@ -363,8 +401,17 @@ def submit_job():
         Respond with ONLY the Markdown content, no explanations or additional text.
         """
 
-        cl_en_response = model.generate_content(cl_en_prompt)
-        cl_en_md = cl_en_response.text
+        try:
+            cl_en_response = model.generate_content(cl_en_prompt)
+            cl_en_md = cl_en_response.text.strip()
+            # Remove any markdown code block markers
+            cl_en_md = re.sub(r'```markdown\s*|\s*```', '', cl_en_md)
+        except Exception as e:
+            logging.error(f"Error generating English cover letter: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Error generating English cover letter: {str(e)}'
+            }), 500
 
         # Generate Chinese cover letter
         cl_zh_prompt = f"""
@@ -382,8 +429,17 @@ def submit_job():
         Respond with ONLY the Markdown content, no explanations or additional text.
         """
 
-        cl_zh_response = model.generate_content(cl_zh_prompt)
-        cl_zh_md = cl_zh_response.text
+        try:
+            cl_zh_response = model.generate_content(cl_zh_prompt)
+            cl_zh_md = cl_zh_response.text.strip()
+            # Remove any markdown code block markers
+            cl_zh_md = re.sub(r'```markdown\s*|\s*```', '', cl_zh_md)
+        except Exception as e:
+            logging.error(f"Error generating Chinese cover letter: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Error generating Chinese cover letter: {str(e)}'
+            }), 500
 
         # Prepare the result
         result = {
