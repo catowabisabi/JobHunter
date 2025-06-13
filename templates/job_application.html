@@ -10,6 +10,20 @@
     </div>
     <div class="card-body">
         <form id="jobForm">
+            <div class="mb-4">
+                <label for="jobSource" class="form-label">Job Source</label>
+                <select class="form-select" id="jobSource" name="jobSource">
+                    <option value="indeed">Indeed</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="mb-4" id="otherSourceDiv" style="display: none;">
+                <label for="otherSource" class="form-label">Please specify the source</label>
+                <input type="text" class="form-control" id="otherSource" name="otherSource" placeholder="Enter job source">
+            </div>
+
             <div class="form-group mb-3">
                 <label for="jobDescription">Job Description</label>
                 <textarea class="form-control" id="jobDescription" rows="10" required
@@ -89,6 +103,12 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+// Add source selection handler
+document.getElementById('jobSource').addEventListener('change', function() {
+    const otherSourceDiv = document.getElementById('otherSourceDiv');
+    otherSourceDiv.style.display = this.value === 'other' ? 'block' : 'none';
+});
+
 document.getElementById('jobForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -96,6 +116,11 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     const spinner = submitBtn.querySelector('.spinner-border');
     const buttonText = document.getElementById('button-text');
     const resultSection = document.getElementById('resultSection');
+    
+    // Get job source
+    const jobSource = document.getElementById('jobSource').value;
+    const otherSource = document.getElementById('otherSource').value;
+    const finalSource = jobSource === 'other' ? otherSource : jobSource;
     
     // UI elements for preview
     const cvPreview = document.getElementById('cv-md-preview');
@@ -112,7 +137,8 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            job_description: document.getElementById('jobDescription').value
+            job_description: document.getElementById('jobDescription').value,
+            job_source: finalSource
         })
     })
     .then(response => {
