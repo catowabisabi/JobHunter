@@ -14,6 +14,18 @@ from forms import LoginForm, RegistrationForm
 import click
 from werkzeug.utils import secure_filename
 
+# Load environment variables
+load_dotenv()
+
+# Configure Gemini API
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+if not GOOGLE_API_KEY:
+    raise ValueError("GOOGLE_API_KEY environment variable is not set")
+
+genai.configure(api_key=GOOGLE_API_KEY)
+GEMINI_MODEL = "gemini-pro"
+model = genai.GenerativeModel(GEMINI_MODEL)
+
 # Configure pdfkit
 # Using the user-provided path for wkhtmltopdf
 path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
@@ -53,13 +65,6 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-# Load environment variables
-load_dotenv()
-GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY')
-GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 def setup_database():
     # This function now assumes it's called within an app context
