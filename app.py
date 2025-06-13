@@ -23,7 +23,17 @@ if not GOOGLE_API_KEY:
     raise ValueError("GOOGLE_API_KEY environment variable is not set")
 
 genai.configure(api_key=GOOGLE_API_KEY)
-GEMINI_MODEL = "gemini-pro"
+
+# List available models
+try:
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(f"Available model: {m.name}")
+except Exception as e:
+    print(f"Error listing models: {e}")
+
+# Use gemini-1.0-pro as it's the most stable version
+GEMINI_MODEL = os.getenv('GEMINI_MODEL')
 model = genai.GenerativeModel(GEMINI_MODEL)
 
 # Configure pdfkit
@@ -64,7 +74,7 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 def setup_database():
     # This function now assumes it's called within an app context
