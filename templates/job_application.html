@@ -150,19 +150,21 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     .then(data => {
         if (data.status === 'success') {
             // Populate preview areas with rendered HTML from Markdown
-            cvPreview.innerHTML = marked.parse(data.markdown.cv_md);
-            clEnPreview.innerHTML = marked.parse(data.markdown.cover_letter_en_md);
-            clZhPreview.innerHTML = marked.parse(data.markdown.cover_letter_zh_md);
+            cvPreview.innerHTML = marked.parse(data.cv_md);
+            clEnPreview.innerHTML = marked.parse(data.cover_letter_en_md);
+            clZhPreview.innerHTML = marked.parse(data.cover_letter_zh_md);
 
             // Update PDF download links
-            if (data.files.cv_pdf) {
-                document.getElementById('cvLink').href = data.files.cv_pdf;
-            }
-            if (data.files.cover_letter_en_pdf) {
-                document.getElementById('coverLetterEnLink').href = data.files.cover_letter_en_pdf;
-            }
-            if (data.files.cover_letter_zh_pdf) {
-                document.getElementById('coverLetterZhLink').href = data.files.cover_letter_zh_pdf;
+            if (data.files) {
+                if (data.files.cv_pdf) {
+                    document.getElementById('cvLink').href = data.files.cv_pdf;
+                }
+                if (data.files.cover_letter_en_pdf) {
+                    document.getElementById('coverLetterEnLink').href = data.files.cover_letter_en_pdf;
+                }
+                if (data.files.cover_letter_zh_pdf) {
+                    document.getElementById('coverLetterZhLink').href = data.files.cover_letter_zh_pdf;
+                }
             }
             
             resultSection.style.display = 'block';
