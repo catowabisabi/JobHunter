@@ -1,91 +1,67 @@
 import json
 
-def get_cv_prompt(job_details, cv_data) :
-    return  f"""
-        Analyze the job posting and my information, then create a modern two-column CV by selecting the most relevant information.
+def get_cv_prompt(job_details, cv_data):
+    return f"""
+You are an expert ATS-optimized resume writer and data structurer. Your task is to analyze the user's information and the job description, then generate a structured JSON object representing a highly tailored, ATS-friendly CV.
 
-        Job Details:
-        {json.dumps(job_details, indent=2)}
+**Job Description:**
+{job_details['description']}
 
-        My Information (select the most relevant parts for this specific role):
-        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
+**User's Full CV Information:**
+{cv_data}
 
-        Task:
-        1. Analyze the job requirements and my experience
-        2. Select the most relevant information for this specific role
-        3. Create a targeted CV that highlights my best matching qualifications
+**Instructions & Logic:**
 
-        Decisions to make:
-        - Which title best matches the role?
-        - Which skills are most relevant?
-        - Which work experiences best demonstrate my fit for the role?
-        - Which education details are most important?
-        - Should I include portfolio links? (for design/art/PM roles)
-        - Should I include GitHub? (for IT roles)
-        - Which achievements best match the job requirements?
+1.  **Analyze Job Type:** First, determine if the job is primarily 'IT/Technical' or 'Design/Creative'. This is crucial for the next step.
+2.  **Conditional Links:**
+    *   If the job is 'IT/Technical', include the `github` URL in the `personal_info` object.
+    *   If the job is 'Design/Creative', include the `portfolio` URL.
+    *   If it's neither or a mix, do not include either link to keep it focused.
+3.  **Intelligent Summary:**
+    *   Deeply analyze the user's entire profile (experience, skills, education) against the job description.
+    *   Craft a **Professional Summary** that is a perfect synthesis of the user's strengths as they relate to the job's key requirements. Do not just list skills; create a compelling narrative.
+4.  **Relevant Experience:**
+    *   From the user's full experience, select **only the most relevant** positions for this specific job. Omit irrelevant ones.
+    *   For each selected position, rewrite the `responsibilities` to subtly embed keywords from the job description. The language must sound natural and achievement-oriented.
+5.  **Keyword Integration:** The primary goal is to naturally weave keywords from the job description throughout the `summary` and `experience` sections.
+6.  **Full Education History:** Include all education entries provided by the user, do not omit any.
 
-        Format the CV using this exact template:
+**JSON Output Format:**
+The JSON object must follow this exact structure. Note that the `skills` field has been intentionally omitted.
 
-        # [Full Name]  
-        **[Selected Most Relevant Job Title]**  
-        [Phone] | [Email] | [Location] | [Selected Portfolio/GitHub if relevant]
+```json
+{{
+  "personal_info": {{
+    "full_name": "string",
+    "title": "string (The most relevant title for the job)",
+    "location": "string",
+    "phone": "string",
+    "email": "string",
+    "portfolio": "string (URL, ONLY if Design/Creative job)",
+    "github": "string (URL, ONLY if IT/Technical job)"
+  }},
+  "summary": "string (A compelling, tailored summary with keywords integrated.)",
+  "experience": [
+    {{
+      "title": "string",
+      "company": "string",
+      "location": "string",
+      "period": "string",
+      "responsibilities": [
+        "string (Achievement-oriented responsibility with integrated keywords.)"
+      ]
+    }}
+  ],
+  "education": [
+    {{
+      "degree": "string",
+      "institution": "string",
+      "period": "string",
+      "details": [ "string" ]
+    }}
+  ]
+}}
+```
 
-        ---
-
-        <div style="display: flex;">
-        <div style="width: 35%; padding-right: 2em; float: left;">
-
-        ## Education
-
-        **[University Name]**, [Location]  
-        [Degree Title]  
-        [Start Date] – [End Date]  
-        - [Education Bullet Point]
-
-        (repeat for each relevant education)
-
-        ---
-
-        ## Skills
-
-        **[Category Title]**  
-        - [Selected Skill 1]  
-        - [Selected Skill 2]  
-
-        (repeat categories as needed)
-
-        </div>
-        <div style="width: 65%; float: left;">
-
-        ## Professional Summary
-        [Write a compelling summary focusing on the selected relevant qualifications]
-
-        ---
-
-        ## Professional Experience
-
-        **[Company Name]**, [Location]  
-        *[Job Title]*  
-        [Start Date] – [End Date]  
-        - [Selected Achievement 1]  
-        - [Selected Achievement 2]  
-        - [Selected Achievement 3]  
-
-        (repeat for each relevant position)
-
-        </div>
-        </div>
-
-        Important Requirements:
-        1. DO NOT include all information from my data
-        2. Select and include ONLY the most relevant information for this specific role
-        3. Keep the exact HTML-like div structure for layout
-        4. Focus on achievements and results that match the job requirements
-        5. Use bullet points for better readability
-        6. Make sure all selected information is accurate
-        7. Do not use emoji or icons
-        8. Do not include table borders
-        9. Keep the formatting clean and professional
-
-        Respond with ONLY the formatted CV in Markdown with inline HTML blocks, no explanations or additional text.
-        """
+**IMPORTANT:** Respond with ONLY the JSON object. The entire response must be a single, valid JSON. Do not include `\```json` wrappers, explanations, or any other text.
+"""

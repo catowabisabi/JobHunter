@@ -3,7 +3,7 @@ import markdown2
 import re # Import the re module for regular expressions
 
 # Separated CSS as a string
-from utils.cv_style import cv_styles
+from cv_style import cv_styles
 
 class CVHtmlExporter:
     def __init__(self, css_styles):

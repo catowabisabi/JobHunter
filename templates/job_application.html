@@ -117,10 +117,17 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     const buttonText = document.getElementById('button-text');
     const resultSection = document.getElementById('resultSection');
     
-    // Get job source
+    // Get form values
+    const jobDescription = document.getElementById('jobDescription').value.trim();
     const jobSource = document.getElementById('jobSource').value;
     const otherSource = document.getElementById('otherSource').value;
     const finalSource = jobSource === 'other' ? otherSource : jobSource;
+
+    // Validate required fields
+    if (!jobDescription) {
+        toastr.error('Please fill in the job description.');
+        return;
+    }
     
     // UI elements for preview
     const cvPreview = document.getElementById('cv-md-preview');
@@ -145,10 +152,10 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            job_description: document.getElementById('jobDescription').value,
-            job_source: finalSource
+            job_description: jobDescription,
+            job_source: finalSource,
+            lang: 'zh'  // Always generate both English and Chinese versions
         }),
-        // Set timeout to 5 minutes
         signal: AbortSignal.timeout(300000)
     })
     .then(response => {
@@ -168,17 +175,9 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
             clZhPreview.innerHTML = marked.parse(data.cover_letter_zh_md);
 
             // Update PDF download links
-            if (data.files) {
-                if (data.files.cv_pdf) {
-                    document.getElementById('cvLink').href = data.files.cv_pdf;
-                }
-                if (data.files.cover_letter_en_pdf) {
-                    document.getElementById('coverLetterEnLink').href = data.files.cover_letter_en_pdf;
-                }
-                if (data.files.cover_letter_zh_pdf) {
-                    document.getElementById('coverLetterZhLink').href = data.files.cover_letter_zh_pdf;
-                }
-            }
+            document.getElementById('cvLink').href = data.files.cv_pdf;
+            document.getElementById('coverLetterEnLink').href = data.files.cover_letter_en_pdf;
+            document.getElementById('coverLetterZhLink').href = data.files.cover_letter_zh_pdf;
             
             resultSection.style.display = 'block';
             toastr.success('Documents generated successfully!');

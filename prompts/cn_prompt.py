@@ -1,23 +1,18 @@
 import json
 
-def get_cn_prompt(cover_letter_md) :
+def get_cn_prompt(cover_letter_md):
     return f"""
-        Translate the following English cover letter into Traditional Chinese (繁體中文) while maintaining the same HTML structure and professional tone.
-        Keep all formatting, dates, and names in their original form.
+Translate the following English cover letter in Markdown format into Traditional Chinese (繁體中文).
+The translated version must also be in pure Markdown format.
 
-        English Cover Letter:
-        {cover_letter_md}
+**English Cover Letter (Markdown):**
+{cover_letter_md}
 
-        Requirements:
-        1. Maintain the same HTML structure and CSS
-        2. Keep the same professional tone
-        3. Ensure the translation is natural and fluent in Traditional Chinese (繁體中文)
-        4. Keep all dates, names, and company information in their original form
-        5. Maintain the same level of formality
-        6. Keep all HTML tags and formatting intact
-        7. Do not add any additional styling or scripts
-        8. Use Traditional Chinese characters (繁體中文) for all translated content
-        9. Keep the same font size and line height settings
+**Translation Requirements:**
+1.  Translate all professional text into natural and fluent Traditional Chinese (繁體中文).
+2.  Keep all names (e.g., company names, personal names), dates, and links in their original English form.
+3.  Preserve the original Markdown formatting exactly (e.g., paragraph breaks, `**bold**` text, etc.).
+4.  The output must be only the translated Markdown text.
 
-        Respond with ONLY the translated cover letter in HTML, no explanations or additional text.
-        """
+**IMPORTANT:** Respond with ONLY the translated cover letter in pure Markdown. Do not include `\```html` or `\```markdown` wrappers, explanations, or any other text.
+"""
