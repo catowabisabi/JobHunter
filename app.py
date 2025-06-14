@@ -36,14 +36,8 @@ except Exception as e:
 GEMINI_MODEL = os.getenv('GEMINI_MODEL')
 model = genai.GenerativeModel(GEMINI_MODEL)
 
-# Configure pdfkit
-# Using the user-provided path for wkhtmltopdf
-path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-try:
-    PDFKIT_CONFIG = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-except OSError:
-    logging.warning("wkhtmltopdf not found at the specified path. PDF generation will fail.")
-    PDFKIT_CONFIG = None
+# Configure PDFKit
+PDFKIT_CONFIG = pdfkit.configuration(wkhtmltopdf='C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
 
 # Use instance_relative_config to let Flask know the instance folder exists
 app = Flask(__name__, instance_relative_config=True)
@@ -306,118 +300,11 @@ def job_application():
 @login_required
 def submit_job():
     try:
-        data = request.get_json()
-        job_description = data.get('job_description')
-        job_source = data.get('job_source', 'unknown')
-
-        if not job_description:
-            return jsonify({
-                'status': 'error',
-                'message': 'Job description is required'
-            }), 400
-
-        # Get user's CV data
-        personal_info = PersonalInfo.query.first()
-        experiences = Experience.query.all()
-        education = Education.query.all()
-
-        if not personal_info:
-            return jsonify({
-                'status': 'error',
-                'message': 'Please complete your CV information first'
-            }), 400
-
-        # Build CV data dictionary
-        cv_data = {
-            "personal_info": {
-                "full_name": personal_info.full_name,
-                "preferred_name": personal_info.preferred_name,
-                "title": personal_info.title,
-                "email": personal_info.email,
-                "phone": personal_info.phone,
-                "location": personal_info.location,
-                "portfolio": personal_info.portfolio,
-                "behance_portfolio": personal_info.behance_portfolio,
-                "github": personal_info.github,
-                "linkedin": personal_info.linkedin,
-                "languages": personal_info.languages,
-                "skills": personal_info.skills,
-                "summary": personal_info.summary,
-                "design_philosophy": personal_info.design_philosophy,
-                "professional_attributes": personal_info.professional_attributes,
-                "willing_to_relocate": personal_info.willing_to_relocate,
-                "possible_titles": personal_info.possible_titles,
-                "references": personal_info.references
-            },
-            "experience": [{
-                "title": exp.title,
-                "company": exp.company,
-                "location": exp.location,
-                "period_start": exp.period_start,
-                "period_end": exp.period_end,
-                "responsibilities": exp.responsibilities,
-                "highlights": exp.highlights
-            } for exp in experiences],
-            "education": [{
-                "degree": edu.degree,
-                "institution": edu.institution,
-                "specialization": edu.specialization,
-                "location": edu.location,
-                "period": edu.period,
-                "highlights": edu.highlights
-            } for edu in education]
-        }
-
-        # Create output directory if it doesn't exist
-        output_dir = os.path.join(app.instance_path, 'output')
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Generate base filename
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        base_filename = f"job_application_{timestamp}"
-
-        # Extract job details using Gemini
-        job_details_prompt = f"""
-        Analyze this job posting from {job_source} and extract the following information in JSON format:
-        - company_name
-        - position
-        - location
-        - key_requirements (as a list)
-        - preferred_qualifications (as a list)
-        - company_description (brief)
-        
-        Job posting:
-        {job_description}
-        
-        Respond with ONLY the JSON object, no other text or explanations.
-        """
-
-        try:
-            job_details_response = model.generate_content(job_details_prompt)
-            cleaned_text = job_details_response.text.strip()
-            cleaned_text = re.sub(r'```json\s*|\s*```', '', cleaned_text)
-            cleaned_text = re.sub(r'<[^>]+>', '', cleaned_text)
-            cleaned_text = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', cleaned_text)
-            
-            try:
-                job_details = json.loads(cleaned_text)
-            except json.JSONDecodeError as e:
-                logging.error(f"Failed to parse job details JSON: {e}")
-                logging.error(f"Cleaned text: {cleaned_text}")
-                job_details = {
-                    "company_name": "Unknown Company",
-                    "position": "Unknown Position",
-                    "location": "Unknown Location",
-                    "key_requirements": [],
-                    "preferred_qualifications": [],
-                    "company_description": "No description available"
-                }
-        except Exception as e:
-            logging.error(f"Error generating job details: {e}")
-            return jsonify({
-                'status': 'error',
-                'message': f'Error generating job details: {str(e)}'
-            }), 500
+        # Get job details from request
+        job_details = request.json.get('job_details', {})
+        job_description = request.json.get('job_description', '')
+        job_source = request.json.get('job_source', '')
+        cv_data = request.json.get('cv_data', {})
 
         # Generate CV using Gemini
         cv_prompt = f"""
@@ -641,7 +528,7 @@ def submit_job():
         # Generate PDF
         try:
             # Create PDF from cover letter
-            pdf = pdfkit.from_string(cover_letter_md, False, options={
+            pdf = pdfkit.from_string(cover_letter_md, False, configuration=PDFKIT_CONFIG, options={
                 'page-size': 'Letter',
                 'margin-top': '0.75in',
                 'margin-right': '0.75in',
@@ -656,7 +543,7 @@ def submit_job():
             # Save PDF to file
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             pdf_filename = f'cover_letter_{timestamp}.pdf'
-            pdf_path = os.path.join(output_dir, pdf_filename)
+            pdf_path = os.path.join(app.instance_path, 'output', pdf_filename)
             
             with open(pdf_path, 'wb') as f:
                 f.write(pdf)
