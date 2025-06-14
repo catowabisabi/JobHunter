@@ -5,6 +5,8 @@ __pycache__/
 
 cv.json
 
+
+test_string.py
 # C extensions
 *.so
 

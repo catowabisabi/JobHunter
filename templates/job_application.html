@@ -132,6 +132,14 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     spinner.classList.remove('d-none');
     buttonText.textContent = 'Generating...';
     resultSection.style.display = 'none';
+
+    // Show loading toast
+    toastr.info('Generating documents... This may take a minute.', null, {
+        timeOut: 0,
+        extendedTimeOut: 0,
+        closeButton: true,
+        progressBar: true
+    });
     
     fetch('/submit_job', {
         method: 'POST',
@@ -139,7 +147,9 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
         body: JSON.stringify({
             job_description: document.getElementById('jobDescription').value,
             job_source: finalSource
-        })
+        }),
+        // Set timeout to 5 minutes
+        signal: AbortSignal.timeout(300000)
     })
     .then(response => {
         if (!response.ok) {
@@ -149,6 +159,9 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     })
     .then(data => {
         if (data.status === 'success') {
+            // Clear loading toast
+            toastr.clear();
+            
             // Populate preview areas with rendered HTML from Markdown
             cvPreview.innerHTML = marked.parse(data.cv_md);
             clEnPreview.innerHTML = marked.parse(data.cover_letter_en_md);
@@ -175,13 +188,19 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
     })
     .catch(error => {
         console.error('Error:', error);
-        toastr.error('Generation failed: ' + error.message);
+        if (error.name === 'TimeoutError') {
+            toastr.error('Request timed out. Please try again.');
+        } else {
+            toastr.error('Generation failed: ' + error.message);
+        }
     })
     .finally(() => {
         // Re-enable button and hide spinner
         submitBtn.disabled = false;
         spinner.classList.add('d-none');
         buttonText.textContent = 'Generate Application Documents';
+        // Clear any remaining loading toasts
+        toastr.clear();
     });
 });
 </script>

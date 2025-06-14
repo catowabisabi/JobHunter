@@ -424,52 +424,14 @@ def submit_job():
             os.makedirs(output_dir, exist_ok=True)
 
             # Convert Markdown to HTML
-            cv_html = markdown2.markdown(cv_md, extras=["tables", "break-on-newline"])
-            cover_letter_en_html = markdown2.markdown(cover_letter_md, extras=["tables", "break-on-newline"])
-            cover_letter_zh_html = markdown2.markdown(chinese_cover_letter_md, extras=["tables", "break-on-newline"])
+            cv_html_content = markdown2.markdown(cv_md, extras=["tables", "break-on-newline"])
+            cover_letter_en_html_content = markdown2.markdown(cover_letter_md, extras=["tables", "break-on-newline"])
+            cover_letter_zh_html_content = markdown2.markdown(chinese_cover_letter_md, extras=["tables", "break-on-newline"])
 
-            # Add CSS styles
-            html_style = """
-            <style>
-                body {
-                    font-family: 'Arial', sans-serif;
-                    line-height: 1.6;
-                    margin: 0;
-                    padding: 20px;
-                }
-                h1, h2 {
-                    color: #2c3e50;
-                }
-                h1 {
-                    border-bottom: 2px solid #2c3e50;
-                    padding-bottom: 10px;
-                }
-                h2 {
-                    margin-top: 20px;
-                }
-                p {
-                    margin: 10px 0;
-                }
-                ul {
-                    margin: 10px 0;
-                    padding-left: 20px;
-                }
-                .flex-container {
-                    display: flex;
-                    gap: 2em;
-                }
-                .left-column {
-                    flex: 35;
-                }
-                .right-column {
-                    flex: 65;
-                }
-            </style>
-            """
-
-            cv_html = f"{html_style}<div class='document'>{cv_html}</div>"
-            cover_letter_en_html = f"{html_style}<div class='document'>{cover_letter_en_html}</div>"
-            cover_letter_zh_html = f"{html_style}<div class='document'>{cover_letter_zh_html}</div>"
+            # Render HTML using templates
+            cv_html = render_template('pdf_template.html', content=cv_html_content)
+            cover_letter_en_html = render_template('letter_template.html', content=cover_letter_en_html_content)
+            cover_letter_zh_html = render_template('letter_template.html', content=cover_letter_zh_html_content)
 
             # Generate CV PDF
             cv_pdf = pdfkit.from_string(cv_html, False, configuration=PDFKIT_CONFIG, options={
