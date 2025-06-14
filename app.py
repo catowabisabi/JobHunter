@@ -423,8 +423,56 @@ def submit_job():
             output_dir = os.path.join(app.instance_path, 'output')
             os.makedirs(output_dir, exist_ok=True)
 
+            # Convert Markdown to HTML
+            cv_html = markdown2.markdown(cv_md, extras=["tables", "break-on-newline"])
+            cover_letter_en_html = markdown2.markdown(cover_letter_md, extras=["tables", "break-on-newline"])
+            cover_letter_zh_html = markdown2.markdown(chinese_cover_letter_md, extras=["tables", "break-on-newline"])
+
+            # Add CSS styles
+            html_style = """
+            <style>
+                body {
+                    font-family: 'Arial', sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                }
+                h1, h2 {
+                    color: #2c3e50;
+                }
+                h1 {
+                    border-bottom: 2px solid #2c3e50;
+                    padding-bottom: 10px;
+                }
+                h2 {
+                    margin-top: 20px;
+                }
+                p {
+                    margin: 10px 0;
+                }
+                ul {
+                    margin: 10px 0;
+                    padding-left: 20px;
+                }
+                .flex-container {
+                    display: flex;
+                    gap: 2em;
+                }
+                .left-column {
+                    flex: 35;
+                }
+                .right-column {
+                    flex: 65;
+                }
+            </style>
+            """
+
+            cv_html = f"{html_style}<div class='document'>{cv_html}</div>"
+            cover_letter_en_html = f"{html_style}<div class='document'>{cover_letter_en_html}</div>"
+            cover_letter_zh_html = f"{html_style}<div class='document'>{cover_letter_zh_html}</div>"
+
             # Generate CV PDF
-            cv_pdf = pdfkit.from_string(cv_md, False, configuration=PDFKIT_CONFIG, options={
+            cv_pdf = pdfkit.from_string(cv_html, False, configuration=PDFKIT_CONFIG, options={
                 'page-size': 'Letter',
                 'margin-top': '0.75in',
                 'margin-right': '0.75in',
@@ -432,8 +480,7 @@ def submit_job():
                 'margin-left': '0.75in',
                 'encoding': 'UTF-8',
                 'no-outline': None,
-                'enable-local-file-access': None,
-                'quiet': ''
+                'enable-local-file-access': None
             })
             cv_filename = f'cv_{timestamp}.pdf'
             cv_path = os.path.join(output_dir, cv_filename)
@@ -441,7 +488,7 @@ def submit_job():
                 f.write(cv_pdf)
 
             # Generate English Cover Letter PDF
-            cl_en_pdf = pdfkit.from_string(cover_letter_md, False, configuration=PDFKIT_CONFIG, options={
+            cl_en_pdf = pdfkit.from_string(cover_letter_en_html, False, configuration=PDFKIT_CONFIG, options={
                 'page-size': 'Letter',
                 'margin-top': '0.75in',
                 'margin-right': '0.75in',
@@ -449,8 +496,7 @@ def submit_job():
                 'margin-left': '0.75in',
                 'encoding': 'UTF-8',
                 'no-outline': None,
-                'enable-local-file-access': None,
-                'quiet': ''
+                'enable-local-file-access': None
             })
             cl_en_filename = f'cover_letter_en_{timestamp}.pdf'
             cl_en_path = os.path.join(output_dir, cl_en_filename)
@@ -458,7 +504,7 @@ def submit_job():
                 f.write(cl_en_pdf)
 
             # Generate Chinese Cover Letter PDF
-            cl_zh_pdf = pdfkit.from_string(chinese_cover_letter_md, False, configuration=PDFKIT_CONFIG, options={
+            cl_zh_pdf = pdfkit.from_string(cover_letter_zh_html, False, configuration=PDFKIT_CONFIG, options={
                 'page-size': 'Letter',
                 'margin-top': '0.75in',
                 'margin-right': '0.75in',
@@ -466,8 +512,7 @@ def submit_job():
                 'margin-left': '0.75in',
                 'encoding': 'UTF-8',
                 'no-outline': None,
-                'enable-local-file-access': None,
-                'quiet': ''
+                'enable-local-file-access': None
             })
             cl_zh_filename = f'cover_letter_zh_{timestamp}.pdf'
             cl_zh_path = os.path.join(output_dir, cl_zh_filename)
