@@ -421,37 +421,65 @@ def submit_job():
 
         # Generate CV using Gemini
         cv_prompt = f"""
-        Create an ATS-optimized CV for this {job_source} job posting. Use the following CV data and job details to create a targeted CV.
-
-        My CV Data:
-        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
+        Analyze the job posting and my information, then create an ATS-optimized CV by selecting the most relevant information.
 
         Job Details:
         {json.dumps(job_details, indent=2)}
 
-        Requirements:
-        1. Create a single, most relevant title based on the job requirements and my experience
-        2. Format all section titles (Summary, Experience, Education) as H2 (##)
-        3. Include ALL education and relevant work experience
-        4. For design/art/PM roles, include my portfolio links
-        5. For IT roles, include my GitHub link
-        6. Use ATS-friendly formatting:
-           - Use standard section headings
-           - Use bullet points for achievements
-           - Include relevant keywords from the job description
-           - Avoid tables, images, or complex formatting
-        7. Structure the CV as follows:
-           - Title (single, most relevant)
-           - Contact Information
-           - Professional Summary (H2)
-           - Professional Experience (H2)
-           - Education (H2)
-           - Skills
-        8. Use actual content from my CV data, no placeholders
-        9. Focus on achievements and measurable results
-        10. Use clear, professional language
+        My Information (select the most relevant parts for this specific role):
+        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
 
-        Respond with ONLY the Markdown content, no explanations or additional text.
+        Task:
+        1. Analyze the job requirements and my experience
+        2. Select the most relevant information for this specific role
+        3. Create a targeted CV that highlights my best matching qualifications
+
+        Decisions to make:
+        - Which title best matches the role?
+        - Which skills are most relevant?
+        - Which work experiences best demonstrate my fit for the role?
+        - Which education details are most important?
+        - Should I include portfolio links? (for design/art/PM roles)
+        - Should I include GitHub? (for IT roles)
+        - Which achievements best match the job requirements?
+
+        Format the CV as follows:
+        # [My Full Name]
+        ### [Selected Most Relevant Title]
+
+        [Selected Contact Information]
+        [Selected Portfolio/GitHub if relevant]
+
+        ## Professional Summary
+        [Write a compelling summary focusing on the selected relevant qualifications]
+
+        ## Professional Experience
+        [List only the most relevant experiences in reverse chronological order:
+        - Company Name, Location
+        - Job Title
+        - Duration
+        - 3-4 bullet points focusing on achievements that match the job requirements]
+
+        ## Education
+        [List relevant education in reverse chronological order:
+        - Degree
+        - Institution
+        - Location
+        - Duration
+        - Key achievements if relevant to the role]
+
+        ## Skills
+        [List only the skills that match the job requirements]
+
+        Important Requirements:
+        1. DO NOT include all information from my data
+        2. Select and include ONLY the most relevant information for this specific role
+        3. Format everything in clean, ATS-friendly Markdown
+        4. Focus on achievements and results that match the job requirements
+        5. Use bullet points for better readability
+        6. Make sure all selected information is accurate
+
+        Respond with ONLY the formatted CV in Markdown, no explanations or additional text.
         """
 
         try:
@@ -465,63 +493,107 @@ def submit_job():
                 'message': f'Error generating CV: {str(e)}'
             }), 500
 
-        # Generate English cover letter
-        cl_en_prompt = f"""
-        Create a professional cover letter in English for this {job_source} job posting. Use the following CV data and job details to create a targeted cover letter.
-
-        My CV Data:
-        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
+        # Generate English Cover Letter using Gemini
+        cover_letter_prompt = f"""
+        Analyze the job posting and my information, then create a compelling cover letter by selecting the most relevant information.
 
         Job Details:
         {json.dumps(job_details, indent=2)}
 
-        Requirements:
-        1. Be addressed to the company
-        2. Highlight relevant qualifications and experiences from my CV
-        3. Show enthusiasm for the position
-        4. Be formatted in Markdown
-        5. Use actual content from my CV data, no placeholders
-        6. Be concise and impactful
-        7. Focus on how my experience matches their requirements
-        8. Include specific examples from my work history
-        9. Show understanding of the company and role
+        My Information (select the most relevant parts for this specific role):
+        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
 
-        Respond with ONLY the Markdown content, no explanations or additional text.
+        Task:
+        1. Analyze the job requirements and my experience
+        2. Select the most relevant information for this specific role
+        3. Create a targeted cover letter that highlights my best matching qualifications
+
+        Decisions to make:
+        - Which achievements best demonstrate my fit for the role?
+        - Which skills are most relevant to highlight?
+        - Which work experiences best match the job requirements?
+        - Should I emphasize my portfolio? (for design/art/PM roles)
+        - Should I emphasize my technical skills? (for IT roles)
+        - What unique value can I bring to this specific role?
+
+        Format the cover letter as follows:
+        [Current Date]
+
+        [Hiring Manager's Name]
+        [Company Name]
+        [Company Address]
+
+        Dear [Hiring Manager's Name],
+
+        [Opening Paragraph]
+        - Mention the specific position
+        - Show enthusiasm for the role
+        - Briefly introduce my most relevant qualification
+
+        [Body Paragraph 1]
+        - Highlight 2-3 most relevant achievements
+        - Connect my experience to the job requirements
+        - Use specific examples and metrics
+
+        [Body Paragraph 2]
+        - Emphasize my unique value proposition
+        - Show how my skills match their needs
+        - Mention relevant portfolio/GitHub if applicable
+
+        [Closing Paragraph]
+        - Express interest in discussing the role further
+        - Thank them for their consideration
+        - Include a call to action
+
+        Sincerely,
+        [My Full Name]
+
+        Important Requirements:
+        1. DO NOT include all information from my data
+        2. Select and include ONLY the most relevant information for this specific role
+        3. Keep the tone professional but engaging
+        4. Focus on achievements and results that match the job requirements
+        5. Make sure all selected information is accurate
+        6. Keep the letter concise and impactful
+        7. Avoid generic statements, be specific to this role
+
+        Respond with ONLY the formatted cover letter, no explanations or additional text.
         """
 
         try:
-            cl_en_response = model.generate_content(cl_en_prompt)
-            cl_en_md = cl_en_response.text.strip()
-            cl_en_md = re.sub(r'```markdown\s*|\s*```', '', cl_en_md)
+            cover_letter_response = model.generate_content(cover_letter_prompt)
+            cover_letter_md = cover_letter_response.text.strip()
+            cover_letter_md = re.sub(r'```markdown\s*|\s*```', '', cover_letter_md)
         except Exception as e:
-            logging.error(f"Error generating English cover letter: {e}")
+            logging.error(f"Error generating cover letter: {e}")
             return jsonify({
                 'status': 'error',
-                'message': f'Error generating English cover letter: {str(e)}'
+                'message': f'Error generating cover letter: {str(e)}'
             }), 500
 
-        # Generate Chinese cover letter by translating the English version
-        cl_zh_prompt = f"""
-        Translate the following English cover letter to Traditional Chinese (繁體中文). Maintain the same professional tone and formatting.
+        # Generate Chinese Cover Letter using Gemini
+        chinese_cover_letter_prompt = f"""
+        Translate the following English cover letter into Traditional Chinese while maintaining the same professional tone and structure.
+        Keep all formatting, dates, and names in their original form.
 
         English Cover Letter:
-        {cl_en_md}
+        {cover_letter_md}
 
         Requirements:
-        1. Use Traditional Chinese characters (繁體中文)
-        2. Maintain the same structure and formatting
-        3. Keep the same level of formality
-        4. Ensure all technical terms are properly translated
-        5. Maintain the same enthusiasm and tone
-        6. Keep the same markdown formatting
+        1. Maintain the same professional tone
+        2. Keep the same structure and formatting
+        3. Ensure the translation is natural and fluent in Chinese
+        4. Keep all dates, names, and company information in their original form
+        5. Maintain the same level of formality
+        6. Keep all bullet points and formatting intact
 
-        Respond with ONLY the translated Markdown content, no explanations or additional text.
+        Respond with ONLY the translated cover letter, no explanations or additional text.
         """
 
         try:
-            cl_zh_response = model.generate_content(cl_zh_prompt)
-            cl_zh_md = cl_zh_response.text.strip()
-            cl_zh_md = re.sub(r'```markdown\s*|\s*```', '', cl_zh_md)
+            chinese_cover_letter_response = model.generate_content(chinese_cover_letter_prompt)
+            chinese_cover_letter_md = chinese_cover_letter_response.text.strip()
+            chinese_cover_letter_md = re.sub(r'```markdown\s*|\s*```', '', chinese_cover_letter_md)
         except Exception as e:
             logging.error(f"Error generating Chinese cover letter: {e}")
             return jsonify({
@@ -533,8 +605,8 @@ def submit_job():
         result = {
             'job_details': job_details,
             'cv_md': cv_md,
-            'cover_letter_en_md': cl_en_md,
-            'cover_letter_zh_md': cl_zh_md
+            'cover_letter_en_md': cover_letter_md,
+            'cover_letter_zh_md': chinese_cover_letter_md
         }
 
         # Save files
