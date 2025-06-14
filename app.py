@@ -522,7 +522,7 @@ def submit_job():
 
         # Generate English Cover Letter using Gemini
         cover_letter_prompt = f"""
-        Analyze the job posting and my information, then create a professionally written, visually aligned cover letter in HTML.
+        Analyze the job posting and my information, then create a professionally written cover letter in HTML.
 
         Job Details:
         {json.dumps(job_details, indent=2)}
@@ -537,24 +537,16 @@ def submit_job():
 
         Format the cover letter using this exact HTML template:
 
-        <div style="display: flex; justify-content: space-between;">
-            <div style="width: 50%;">
-                <h1>[Full Name]</h1>
-                <p>[Location]</p>
-                <p>[Phone]</p>
-                <p>[Email]</p>
-                <p>[Portfolio/GitHub if relevant]</p>
-            </div>
-            <div style="width: 50%; text-align: right;">
-                <p>[Hiring Manager's Name]</p>
-                <p>[Company Name]</p>
-                <p>[Company Address]</p>
-            </div>
-        </div>
+        <style>
+        .cover-letter {
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+        </style>
 
-        <hr>
+        <div class="cover-letter">
 
-        <p>Dear [Hiring Manager's Name],</p>
+        **Dear Hiring Manager,**
 
         <p>[Opening Paragraph]
         - Mention the specific position and company name
@@ -583,20 +575,21 @@ def submit_job():
         - Include a strong call to action
         - Show enthusiasm for discussing the role further</p>
 
-        <p>Sincerely,<br>
-        [Full Name]</p>
+        **Sincerely,**<br>
+        [Full Name]
+
+        </div>
 
         Important Requirements:
         1. DO NOT include all information from my data
         2. Select and include ONLY the most relevant information for this specific role
-        3. Keep the exact HTML structure for layout
-        4. Use <p> for paragraphs and <strong> or <em> for emphasis
-        5. No inline CSS unless absolutely needed
-        6. Keep the tone confident, warm, and professional
-        7. Make sure all selected information is accurate
-        8. Keep the letter concise and impactful
-        9. Avoid generic statements, be specific to this role
-        10. Do not add extraneous style code or script tags
+        3. Keep the exact HTML structure and CSS
+        4. Use ** for bold text and * for italic text
+        5. Keep the tone confident, warm, and professional
+        6. Make sure all selected information is accurate
+        7. Keep the letter concise and impactful
+        8. Avoid generic statements, be specific to this role
+        9. Do not add extraneous style code or script tags
 
         Respond with ONLY the formatted cover letter in HTML, no explanations or additional text.
         """
@@ -621,7 +614,7 @@ def submit_job():
         {cover_letter_md}
 
         Requirements:
-        1. Maintain the same HTML structure and layout
+        1. Maintain the same HTML structure and CSS
         2. Keep the same professional tone
         3. Ensure the translation is natural and fluent in Chinese
         4. Keep all dates, names, and company information in their original form
@@ -643,115 +636,45 @@ def submit_job():
                 'message': f'Error generating Chinese cover letter: {str(e)}'
             }), 500
 
-        # Prepare the result
-        result = {
-            'job_details': job_details,
-            'cv_md': cv_md,
-            'cover_letter_en_md': cover_letter_md,
-            'cover_letter_zh_md': chinese_cover_letter_md
-        }
+        # Generate PDF
+        try:
+            # Create PDF from cover letter
+            pdf = pdfkit.from_string(cover_letter_md, False, options={
+                'page-size': 'Letter',
+                'margin-top': '0.75in',
+                'margin-right': '0.75in',
+                'margin-bottom': '0.75in',
+                'margin-left': '0.75in',
+                'encoding': 'UTF-8',
+                'no-outline': None,
+                'enable-local-file-access': None,
+                'quiet': ''
+            })
 
-        # Save files
-        output_dir = 'output'
-        os.makedirs(output_dir, exist_ok=True)
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        company_name = secure_filename(result['job_details'].get('company_name', 'UnknownCompany'))
-        position = secure_filename(result['job_details'].get('position', 'UnknownPosition'))
-        base_filename = f"{timestamp}_{company_name}_{position}"
+            # Save PDF to file
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            pdf_filename = f'cover_letter_{timestamp}.pdf'
+            pdf_path = os.path.join(output_dir, pdf_filename)
+            
+            with open(pdf_path, 'wb') as f:
+                f.write(pdf)
 
-        def generate_pdf(markdown_content, template, output_filename):
-            try:
-                # Convert Markdown to HTML
-                html_fragment = markdown2.markdown(markdown_content)
-                
-                # Render full HTML with template
-                full_html = render_template(template, content=html_fragment)
-                
-                # Generate PDF
-                pdf_path = os.path.join(output_dir, output_filename)
-                if PDFKIT_CONFIG:
-                    pdfkit.from_string(
-                        full_html, 
-                        pdf_path,
-                        configuration=PDFKIT_CONFIG,
-                        options={
-                            'encoding': 'utf-8',
-                            'margin-top': '20mm',
-                            'margin-right': '20mm',
-                            'margin-bottom': '20mm',
-                            'margin-left': '20mm',
-                            'page-size': 'A4'
-                        }
-                    )
-                    return pdf_path
-                else:
-                    logging.error("PDFKit configuration not found")
-                    return None
-            except Exception as e:
-                logging.error(f"PDF generation failed: {e}")
-                return None
+            return jsonify({
+                'status': 'success',
+                'message': 'Cover letter generated successfully',
+                'job_details': job_details,
+                'cv_md': cv_md,
+                'cover_letter_en_md': cover_letter_md,
+                'cover_letter_zh_md': chinese_cover_letter_md,
+                'pdf_filename': pdf_filename
+            })
+        except Exception as e:
+            logging.error(f"Error generating PDF: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': f'Error generating PDF: {str(e)}'
+            }), 500
 
-        # Generate PDFs for all documents
-        cv_pdf = generate_pdf(
-            result.get('cv_md', ''),
-            'pdf_template.html',
-            f"{base_filename}_CV.pdf"
-        )
-        
-        cl_en_pdf = generate_pdf(
-            result.get('cover_letter_en_md', ''),
-            'letter_template.html',
-            f"{base_filename}_Cover_Letter_EN.pdf"
-        )
-        
-        cl_zh_pdf = generate_pdf(
-            result.get('cover_letter_zh_md', ''),
-            'letter_template.html',
-            f"{base_filename}_Cover_Letter_ZH.pdf"
-        )
-
-        # Save Markdown files for reference
-        def save_markdown(content, filename):
-            path = os.path.join(output_dir, filename)
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            return path
-
-        cv_md_path = save_markdown(result.get('cv_md', ''), f"{base_filename}_CV.md")
-        cl_en_md_path = save_markdown(result.get('cover_letter_en_md', ''), f"{base_filename}_Cover_Letter_EN.md")
-        cl_zh_md_path = save_markdown(result.get('cover_letter_zh_md', ''), f"{base_filename}_Cover_Letter_ZH.md")
-
-        # Save job application details to the database
-        new_application = JobApplication(
-            company_name=result['job_details'].get('company_name'),
-            position=result['job_details'].get('position'),
-            location=result['job_details'].get('location'),
-            job_description=job_description,
-            cv_path=cv_pdf,
-            cover_letter_en_path=cl_en_pdf,
-            cover_letter_zh_path=cl_zh_pdf
-        )
-        db.session.add(new_application)
-        db.session.commit()
-
-        # Prepare response for the frontend
-        response_data = {
-            'status': 'success',
-            'markdown': {
-                'cv_md': result.get('cv_md', ''),
-                'cover_letter_en_md': result.get('cover_letter_en_md', ''),
-                'cover_letter_zh_md': result.get('cover_letter_zh_md', '')
-            },
-            'files': {
-                'cv_pdf': url_for('static_file', filename=os.path.basename(cv_pdf)) if cv_pdf else None,
-                'cover_letter_en_pdf': url_for('static_file', filename=os.path.basename(cl_en_pdf)) if cl_en_pdf else None,
-                'cover_letter_zh_pdf': url_for('static_file', filename=os.path.basename(cl_zh_pdf)) if cl_zh_pdf else None
-            }
-        }
-        
-        return jsonify(response_data)
-        
     except json.JSONDecodeError as e:
         logging.error(f"JSON decoding error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
