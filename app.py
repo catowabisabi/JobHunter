@@ -421,7 +421,7 @@ def submit_job():
 
         # Generate CV using Gemini
         cv_prompt = f"""
-        Analyze the job posting and my information, then create an ATS-optimized CV by selecting the most relevant information.
+        Analyze the job posting and my information, then create a modern two-column CV by selecting the most relevant information.
 
         Job Details:
         {json.dumps(job_details, indent=2)}
@@ -443,43 +443,70 @@ def submit_job():
         - Should I include GitHub? (for IT roles)
         - Which achievements best match the job requirements?
 
-        Format the CV as follows:
-        # [My Full Name]
-        ### [Selected Most Relevant Title]
+        Format the CV using this exact template:
 
-        [Selected Contact Information]
-        [Selected Portfolio/GitHub if relevant]
+        # [Full Name]  
+        **[Selected Most Relevant Job Title]**  
+        [Phone] | [Email] | [Location] | [Selected Portfolio/GitHub if relevant]
+
+        ---
+
+        <div style="display: flex;">
+        <div style="width: 35%; padding-right: 2em; float: left;">
+
+        ## Education
+
+        **[University Name]**, [Location]  
+        [Degree Title]  
+        [Start Date] – [End Date]  
+        - [Education Bullet Point]
+
+        (repeat for each relevant education)
+
+        ---
+
+        ## Skills
+
+        **[Category Title]**  
+        - [Selected Skill 1]  
+        - [Selected Skill 2]  
+
+        (repeat categories as needed)
+
+        </div>
+        <div style="width: 65%; float: left;">
 
         ## Professional Summary
         [Write a compelling summary focusing on the selected relevant qualifications]
 
+        ---
+
         ## Professional Experience
-        [List only the most relevant experiences in reverse chronological order:
-        - Company Name, Location
-        - Job Title
-        - Duration
-        - 3-4 bullet points focusing on achievements that match the job requirements]
 
-        ## Education
-        [List relevant education in reverse chronological order:
-        - Degree
-        - Institution
-        - Location
-        - Duration
-        - Key achievements if relevant to the role]
+        **[Company Name]**, [Location]  
+        *[Job Title]*  
+        [Start Date] – [End Date]  
+        - [Selected Achievement 1]  
+        - [Selected Achievement 2]  
+        - [Selected Achievement 3]  
 
-        ## Skills
-        [List only the skills that match the job requirements]
+        (repeat for each relevant position)
+
+        </div>
+        </div>
 
         Important Requirements:
         1. DO NOT include all information from my data
         2. Select and include ONLY the most relevant information for this specific role
-        3. Format everything in clean, ATS-friendly Markdown
+        3. Keep the exact HTML-like div structure for layout
         4. Focus on achievements and results that match the job requirements
         5. Use bullet points for better readability
         6. Make sure all selected information is accurate
+        7. Do not use emoji or icons
+        8. Do not include table borders
+        9. Keep the formatting clean and professional
 
-        Respond with ONLY the formatted CV in Markdown, no explanations or additional text.
+        Respond with ONLY the formatted CV in Markdown with inline HTML blocks, no explanations or additional text.
         """
 
         try:
@@ -495,7 +522,7 @@ def submit_job():
 
         # Generate English Cover Letter using Gemini
         cover_letter_prompt = f"""
-        Analyze the job posting and my information, then create a compelling cover letter by selecting the most relevant information.
+        Analyze the job posting and my information, then create a professionally written, visually aligned cover letter in HTML.
 
         Job Details:
         {json.dumps(job_details, indent=2)}
@@ -508,56 +535,70 @@ def submit_job():
         2. Select the most relevant information for this specific role
         3. Create a targeted cover letter that highlights my best matching qualifications
 
-        Decisions to make:
-        - Which achievements best demonstrate my fit for the role?
-        - Which skills are most relevant to highlight?
-        - Which work experiences best match the job requirements?
-        - Should I emphasize my portfolio? (for design/art/PM roles)
-        - Should I emphasize my technical skills? (for IT roles)
-        - What unique value can I bring to this specific role?
+        Format the cover letter using this exact HTML template:
 
-        Format the cover letter as follows:
-        [Current Date]
+        <div style="display: flex; justify-content: space-between;">
+            <div style="width: 50%;">
+                <h1>[Full Name]</h1>
+                <p>[Location]</p>
+                <p>[Phone]</p>
+                <p>[Email]</p>
+                <p>[Portfolio/GitHub if relevant]</p>
+            </div>
+            <div style="width: 50%; text-align: right;">
+                <p>[Hiring Manager's Name]</p>
+                <p>[Company Name]</p>
+                <p>[Company Address]</p>
+            </div>
+        </div>
 
-        [Hiring Manager's Name]
-        [Company Name]
-        [Company Address]
+        <hr>
 
-        Dear [Hiring Manager's Name],
+        <p>Dear [Hiring Manager's Name],</p>
 
-        [Opening Paragraph]
-        - Mention the specific position
+        <p>[Opening Paragraph]
+        - Mention the specific position and company name
         - Show enthusiasm for the role
-        - Briefly introduce my most relevant qualification
+        - Mention how you found the position
+        - Briefly introduce your most relevant qualification</p>
 
-        [Body Paragraph 1]
-        - Highlight 2-3 most relevant achievements
-        - Connect my experience to the job requirements
-        - Use specific examples and metrics
+        <p>[Body Paragraph 1]
+        - Summarize your experience relevant to the position
+        - Focus on your most relevant achievements
+        - Connect your experience to the job requirements</p>
 
-        [Body Paragraph 2]
-        - Emphasize my unique value proposition
-        - Show how my skills match their needs
-        - Mention relevant portfolio/GitHub if applicable
+        <p>[Body Paragraph 2]
+        - Provide specific examples from your past roles
+        - Demonstrate how you've used the required skills
+        - Include metrics and results where possible</p>
 
-        [Closing Paragraph]
-        - Express interest in discussing the role further
-        - Thank them for their consideration
-        - Include a call to action
+        <p>[Body Paragraph 3]
+        - Highlight your technical proficiencies
+        - Emphasize your soft skills (communication, leadership)
+        - Mention your portfolio/GitHub if relevant
+        - Show how these skills make you a great fit</p>
 
-        Sincerely,
-        [My Full Name]
+        <p>[Closing Paragraph]
+        - Express appreciation for their consideration
+        - Include a strong call to action
+        - Show enthusiasm for discussing the role further</p>
+
+        <p>Sincerely,<br>
+        [Full Name]</p>
 
         Important Requirements:
         1. DO NOT include all information from my data
         2. Select and include ONLY the most relevant information for this specific role
-        3. Keep the tone professional but engaging
-        4. Focus on achievements and results that match the job requirements
-        5. Make sure all selected information is accurate
-        6. Keep the letter concise and impactful
-        7. Avoid generic statements, be specific to this role
+        3. Keep the exact HTML structure for layout
+        4. Use <p> for paragraphs and <strong> or <em> for emphasis
+        5. No inline CSS unless absolutely needed
+        6. Keep the tone confident, warm, and professional
+        7. Make sure all selected information is accurate
+        8. Keep the letter concise and impactful
+        9. Avoid generic statements, be specific to this role
+        10. Do not add extraneous style code or script tags
 
-        Respond with ONLY the formatted cover letter, no explanations or additional text.
+        Respond with ONLY the formatted cover letter in HTML, no explanations or additional text.
         """
 
         try:
@@ -573,21 +614,22 @@ def submit_job():
 
         # Generate Chinese Cover Letter using Gemini
         chinese_cover_letter_prompt = f"""
-        Translate the following English cover letter into Traditional Chinese while maintaining the same professional tone and structure.
+        Translate the following English cover letter into Traditional Chinese while maintaining the same HTML structure and professional tone.
         Keep all formatting, dates, and names in their original form.
 
         English Cover Letter:
         {cover_letter_md}
 
         Requirements:
-        1. Maintain the same professional tone
-        2. Keep the same structure and formatting
+        1. Maintain the same HTML structure and layout
+        2. Keep the same professional tone
         3. Ensure the translation is natural and fluent in Chinese
         4. Keep all dates, names, and company information in their original form
         5. Maintain the same level of formality
-        6. Keep all bullet points and formatting intact
+        6. Keep all HTML tags and formatting intact
+        7. Do not add any additional styling or scripts
 
-        Respond with ONLY the translated cover letter, no explanations or additional text.
+        Respond with ONLY the translated cover letter in HTML, no explanations or additional text.
         """
 
         try:
