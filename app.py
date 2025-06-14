@@ -421,7 +421,7 @@ def submit_job():
 
         # Generate CV using Gemini
         cv_prompt = f"""
-        Create a professional CV optimized for this {job_source} job posting. Use the following CV data and job details to create a targeted CV.
+        Create an ATS-optimized CV for this {job_source} job posting. Use the following CV data and job details to create a targeted CV.
 
         My CV Data:
         {json.dumps(cv_data, indent=2, ensure_ascii=False)}
@@ -430,15 +430,26 @@ def submit_job():
         {json.dumps(job_details, indent=2)}
 
         Requirements:
-        1. Highlight relevant skills and experiences that match the job requirements
-        2. Use clear, professional language
-        3. Include all necessary sections (Personal Info, Experience, Education, Skills)
-        4. Be formatted in Markdown
-        5. Use actual content from my CV data, no placeholders
-        6. Be concise and impactful
-        7. Focus on achievements and results
-        8. Use bullet points for better readability
-        9. Include relevant keywords from the job description
+        1. Create a single, most relevant title based on the job requirements and my experience
+        2. Format all section titles (Summary, Experience, Education) as H2 (##)
+        3. Include ALL education and relevant work experience
+        4. For design/art/PM roles, include my portfolio links
+        5. For IT roles, include my GitHub link
+        6. Use ATS-friendly formatting:
+           - Use standard section headings
+           - Use bullet points for achievements
+           - Include relevant keywords from the job description
+           - Avoid tables, images, or complex formatting
+        7. Structure the CV as follows:
+           - Title (single, most relevant)
+           - Contact Information
+           - Professional Summary (H2)
+           - Professional Experience (H2)
+           - Education (H2)
+           - Skills
+        8. Use actual content from my CV data, no placeholders
+        9. Focus on achievements and measurable results
+        10. Use clear, professional language
 
         Respond with ONLY the Markdown content, no explanations or additional text.
         """
@@ -489,29 +500,22 @@ def submit_job():
                 'message': f'Error generating English cover letter: {str(e)}'
             }), 500
 
-        # Generate Chinese cover letter
+        # Generate Chinese cover letter by translating the English version
         cl_zh_prompt = f"""
-        Create a professional cover letter in Traditional Chinese for this {job_source} job posting. Use the following CV data and job details to create a targeted cover letter.
+        Translate the following English cover letter to Traditional Chinese (繁體中文). Maintain the same professional tone and formatting.
 
-        My CV Data:
-        {json.dumps(cv_data, indent=2, ensure_ascii=False)}
-
-        Job Details:
-        {json.dumps(job_details, indent=2)}
+        English Cover Letter:
+        {cl_en_md}
 
         Requirements:
-        1. Be addressed to the company
-        2. Highlight relevant qualifications and experiences from my CV
-        3. Show enthusiasm for the position
-        4. Be formatted in Markdown
-        5. Use actual content from my CV data, no placeholders
-        6. Be concise and impactful
-        7. Focus on how my experience matches their requirements
-        8. Include specific examples from my work history
-        9. Show understanding of the company and role
-        10. Use Traditional Chinese characters (繁體中文)
+        1. Use Traditional Chinese characters (繁體中文)
+        2. Maintain the same structure and formatting
+        3. Keep the same level of formality
+        4. Ensure all technical terms are properly translated
+        5. Maintain the same enthusiasm and tone
+        6. Keep the same markdown formatting
 
-        Respond with ONLY the Markdown content, no explanations or additional text.
+        Respond with ONLY the translated Markdown content, no explanations or additional text.
         """
 
         try:
