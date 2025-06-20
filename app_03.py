@@ -14,23 +14,7 @@ from forms import LoginForm, RegistrationForm
 import click
 from werkzeug.utils import secure_filename
 from utils.cv_style import cv_styles
-
-fake_cv_md = """
-\n# Chris Chun Fung Lui\n\n**Design Solutions Manager**\n\nToronto, ON | +1 437 922 1330 | enomars@gmail.com | https://mono12.com/ | https://github.com/catowabisabi\n\n---\n\n## Professional Summary\n\nA multidisciplinary creative technologist and industrial designer with extensive experience in AV design, digital signage engineering, and managing design projects from concept to execution. Expertise in creating innovative digital experiences using LCD, LED, and other cutting-edge technologies. Proficient in managing end-to-end product lifecycles, providing technical solutions, and supporting sales efforts. Strong background in Autodesk software, Microsoft Visio, and IT network infrastructure. Possesses exceptional leadership and communication skills, with a proven track record of delivering high-quality, client-focused solutions. Familiar with Content Management Systems (CMS) and digital media infrastructure.\n\n## Professional Experience\n\n### Freelance Developer at Self-employed\n*August 2021 - Present | Ontario*\n- Designed and implemented custom trading strategies using Python and Pine Script, including data scraping, cleaning, and real-time backtesting pipelines.\n- Built RESTful APIs and backend systems using FastAPI, Flask, and NestJS; developed dynamic dashboards with React and Next.js for data visualization.\n- Automated workflows integrating various platforms, improving efficiency.\n\n### Industrial Designer at Foodfight North America LLC\n*January 2021 - December 2023 | Toronto, ON*\n- Designed innovative kitchen gadgets and bakeware, focusing on usability and market appeal.\n- Refined product designs from initial sketches to detailed CAD models, ensuring alignment with brand standards and manufacturing capabilities.\n- Selected materials suitable for kitchen environments and coordinated with manufacturing teams to optimize production efficiency.\n\n### Senior Industrial Designer at Backstage International Limited\n*June 2016 - July 2017 | Hong Kong*\n- Designed health and medical devices (e.g., CPAP machines, sonic toothbrushes), managing projects from concept to production.\n- Collaborated with clients to establish clear design briefs, including concept, performance, and manufacturing criteria.\n- Oversaw manufacturing feasibility, cost efficiency, and material selection.\n- Created high-quality photorealistic renderings for client presentations.\n\n### Design & Project Manager at Rich Creation International Ltd\n*February 2013 - February 2016 | Hong Kong*\n- Managed high-end decoration design and installation projects for five-star casinos (Wynn, MGM).\n- Translated client concept drawings into practical, production-ready designs.\n- Coordinated with factories to ensure timely component readiness for seamless installation.\n- Produced 3D technical drawings for structural evaluation and photorealistic renderings for client presentations.\n\n## Education\n\n### Master of Design\n*OCAD University | September 2019 - June 2021*\n- Developed user-centered design approach, especially through projects focusing on geriatric design.\n\n### Postgraduate Diploma in Education (Secondary)\n*The Education University of Hong Kong | September 2015 - June 2017*\n- Specialized in Design and Technology (D&T) and STEM education with professional training for secondary teaching.\n\n### BA (Hons) in Art and Design in Education\n*School of Design, The Hong Kong Polytechnic University | September 2011 - January 2015*\n- Specialized in Design and Technology (D&T) and STEM education with professional training for secondary teaching.\n\n## Skills\n\n**AV & Digital Signage:** AV Design, Digital Signage Engineering, Large Format LED Systems, Content Management Systems (CMS), Video Transport and Playback Technology\n\n**Design Software:** SolidWorks, Autodesk Software, Microsoft Visio, Adobe Creative Suite, Blender, ZBrush, Rhino\n\n**Technical Skills:** IT Network Infrastructure, Subnetting, VLANs, Mechanical and Structural Mounting Systems\n\n**Management & Collaboration:** Team Leadership, Cross-functional Collaboration, Project Management, Client Interaction, Sales Support\n\n## Languages\n\nEnglish: Fluent, Cantonese: Fluent\n
-"""
-fake_cl_md = """\nDear Hiring Manager,\n\nI am writing to express my enthusiastic interest in the Design Solutions Manager position at ICON Media Communications, as advertised on Indeed. With over 5 years of leadership experience in design, coupled with my extensive background in AV solutions, digital signage, and a deep understanding of cutting-edge technologies, I am confident I possess the skills and passion to excel in this role and significantly contribute to ICON's success.\n\nMy experience directly aligns with the primary responsibilities outlined in the job description. As a Design & Project Manager at Rich Creation International, I managed large-scale decoration design and installation projects for Wynn and MGM casinos, translating client concept drawings into practical, production-ready designs – a direct parallel to overseeing the design and development of complex AV and digital signage solutions you require. Furthermore, my role as a Senior Industrial Designer at Backstage International involved managing the entire product lifecycle of health and medical devices, including design, manufacturing feasibility, material selection, and prototyping. This experience equips me with a strong understanding of BOMs, solution schematics, and technical documentation, essential for managing and mentoring a team of Solutions Engineers and Designers. I'm also proficient with design tools like Autodesk software and Microsoft Visio, and familiar with IT network infrastructure, including subnetting and VLANs, further enhancing my ability to contribute effectively to your team. My fluency in Cantonese and Mandarin, in addition to English, will be an asset in working with diverse teams and potentially international clients.\n\nI am eager to learn more about this opportunity and discuss how my skills and experience can contribute to ICON Media's continued innovation and success in the digital signage industry. Thank you for your time and consideration. I look forward to hearing from you soon.\n\nSincerely,\n\n**Chris Chun Fung Lui**\n"""
-
-fake_cl_md_cn = """\n敬愛的招募經理：
-
-我寫信是為了表達我對 ICON Media Communications Inc. 設計解決方案經理一職的熱忱，該職位是在 Indeed 上看到的。憑藉超過 5 年的領導經驗、對 AV 和數位看板解決方案的深 刻理解，以及推動創新的良好記錄，我深信我具備勝任此職位並為 ICON 的成功做出重大貢獻所需的技能和經驗。
-
-我在工業設計和技術方面的背景，使我能夠獨特地領導技術設計團隊並提供創新的數位看板解決方案。在 Rich Creation International Ltd 擔任設計和專案經理期間，我為 Wynn 和 MGM 賭場管理高端裝飾設計和安裝項目，將客戶的概念圖轉換為實際的、可生產的設計，與工廠協調，並製作詳細的 3D 技術圖紙 – 這些技能直接適用於監督 ICON Media 的物料清單 (BOM)、解決方案示意圖和技術文件。此外，我在 Backstage International Limited 擔任高級工業設計師的經驗包括設計從概念到生產的健康和醫療設備，其中包括製造可行性、成本效益和材料選擇，這證明了我管理複雜項目和確保高品質成果的能力。我的技術技能，包括精通 Visio 和熟悉 IT 網路基礎設施，加上我的領導經驗和對數位創新的熱情，與此職位的 要求完美契合。
-
-我渴望將我的專業知識和領導技能貢獻給 ICON Media，並且相信我可以對您團隊的成功產生重大影響。感謝您考慮我的申請。我已附上我的履歷供您參考，並歡迎有機會在面試中進一 步討論我的資歷。
-
-此致，
-
-**Chris Chun Fung Lui**\n"""
+from utils.generic_style import generic_styles
 
 # Load environment variables
 load_dotenv()
@@ -47,8 +31,6 @@ model = genai.GenerativeModel(GEMINI_MODEL)
 PDFKIT_CONFIG = pdfkit.configuration(wkhtmltopdf='C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
 # Setup logging
 logging.basicConfig(level=logging.INFO)
-
-
 
 # Use instance_relative_config to let Flask know the instance folder exists
 app = Flask(__name__, instance_relative_config=True)
@@ -163,7 +145,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
-
 @app.route('/convert', methods=['GET', 'POST'])
 @login_required
 def convert():
@@ -197,7 +178,7 @@ def convert():
                 <head>
                     <meta charset="UTF-8">
                     <title>Converted Document</title>
-                    <style>{cv_styles}</style>
+                    <style>{generic_styles}</style>
                 </head>
                 <body>
                     {html_content}
@@ -207,10 +188,10 @@ def convert():
             else: # input_format == 'html'
                 # Inject styles into the head of the existing HTML
                 if '</head>' in content:
-                    final_html = content.replace('</head>', f'<style>{cv_styles}</style></head>', 1)
+                    final_html = content.replace('</head>', f'<style>{generic_styles}</style></head>', 1)
                 else:
                     # If no head tag, just wrap it. Might not be perfect but better than nothing.
-                    final_html = f"<html><head><style>{cv_styles}</style></head>{content}</html>"
+                    final_html = f"<html><head><style>{generic_styles}</style></head>{content}</html>"
 
 
             output_dir = os.path.join(app.root_path, 'output')
@@ -232,8 +213,6 @@ def convert():
 
     return render_template('convert.html')
 
-
-
 @app.route('/')
 @login_required
 def index():
@@ -244,8 +223,6 @@ def index():
                          personal_info=personal_info,
                          experiences=experiences,
                          education=education)
-
-
 
 @app.route('/save_cv', methods=['POST'])
 @login_required
@@ -515,6 +492,7 @@ def json_to_cl_markdown(data):
 @login_required
 def submit_job():
     try:
+        # Get job details from request
         job_description = request.json.get('job_description', '')
         job_source = request.json.get('job_source', '')
         
@@ -587,6 +565,7 @@ def submit_job():
         testing = False
         
         if testing:
+            return None
             cv_md = fake_cv_md
             cover_letter_md = fake_cl_md
             chinese_cover_letter_md = fake_cl_md_cn

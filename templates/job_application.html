@@ -59,12 +59,15 @@
         <div class="card-body">
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="cv-preview-pane" role="tabpanel">
+                    <button class="btn btn-secondary btn-sm float-end copy-btn" data-target="cv-md-preview">Copy Markdown</button>
                     <div id="cv-md-preview"></div>
                 </div>
                 <div class="tab-pane fade" id="cl-en-preview-pane" role="tabpanel">
+                    <button class="btn btn-secondary btn-sm float-end copy-btn" data-target="cover-letter-en-md-preview">Copy Markdown</button>
                     <div id="cover-letter-en-md-preview"></div>
                 </div>
                 <div class="tab-pane fade" id="cl-zh-preview-pane" role="tabpanel">
+                    <button class="btn btn-secondary btn-sm float-end copy-btn" data-target="cover-letter-zh-md-preview">Copy Markdown</button>
                     <div id="cover-letter-zh-md-preview"></div>
                 </div>
             </div>
@@ -169,7 +172,11 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
             // Clear loading toast
             toastr.clear();
             
-            // Populate preview areas with rendered HTML from Markdown
+            // Store markdown in data attributes and render HTML
+            cvPreview.dataset.markdown = data.cv_md;
+            clEnPreview.dataset.markdown = data.cover_letter_en_md;
+            clZhPreview.dataset.markdown = data.cover_letter_zh_md;
+
             cvPreview.innerHTML = marked.parse(data.cv_md);
             clEnPreview.innerHTML = marked.parse(data.cover_letter_en_md);
             clZhPreview.innerHTML = marked.parse(data.cover_letter_zh_md);
@@ -200,6 +207,28 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
         buttonText.textContent = 'Generate Application Documents';
         // Clear any remaining loading toasts
         toastr.clear();
+    });
+});
+
+// Add event listener for copy buttons
+document.querySelectorAll('.copy-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const targetId = this.dataset.target;
+        const targetElement = document.getElementById(targetId);
+        const markdownContent = targetElement.dataset.markdown;
+        
+        if (markdownContent) {
+            navigator.clipboard.writeText(markdownContent)
+                .then(() => {
+                    toastr.success('Markdown copied to clipboard!');
+                })
+                .catch(err => {
+                    toastr.error('Failed to copy text.');
+                    console.error('Error copying text: ', err);
+                });
+        } else {
+            toastr.warning('No content to copy.');
+        }
     });
 });
 </script>

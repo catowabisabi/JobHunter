@@ -13,6 +13,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from forms import LoginForm, RegistrationForm
 import click
 from werkzeug.utils import secure_filename
+from utils.cv_style import cv_styles
 
 # Load environment variables
 load_dotenv()
@@ -154,6 +155,77 @@ def register():
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
+
+
+@app.route('/convert', methods=['GET', 'POST'])
+@login_required
+def convert():
+    if request.method == 'POST':
+        content = request.form.get('content')
+        input_format = request.form.get('input_format')
+
+        if not content:
+            flash('Content cannot be empty.', 'danger')
+            return redirect(url_for('convert'))
+
+        html_content = ""
+        try:
+            if input_format == 'md':
+                html_content = markdown2.markdown(content, extras=["fenced-code-blocks", "tables", "strike"])
+            elif input_format == 'html':
+                # Basic validation for HTML
+                if not re.search(r'<html.*?>', content, re.IGNORECASE) or not re.search(r'<body.*?>', content, re.IGNORECASE):
+                     flash('Invalid HTML format. Please provide a full HTML document structure.', 'danger')
+                     return render_template('convert.html', error='Invalid HTML format. It must contain <html> and <body> tags.')
+                html_content = content
+            else:
+                flash('Invalid format selected.', 'danger')
+                return redirect(url_for('convert'))
+
+            # For Markdown, wrap in basic HTML with styles. For HTML, inject styles.
+            if input_format == 'md':
+                final_html = f"""
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Converted Document</title>
+                    <style>{cv_styles}</style>
+                </head>
+                <body>
+                    {html_content}
+                </body>
+                </html>
+                """
+            else: # input_format == 'html'
+                # Inject styles into the head of the existing HTML
+                if '</head>' in content:
+                    final_html = content.replace('</head>', f'<style>{cv_styles}</style></head>', 1)
+                else:
+                    # If no head tag, just wrap it. Might not be perfect but better than nothing.
+                    final_html = f"<html><head><style>{cv_styles}</style></head>{content}</html>"
+
+
+            output_dir = os.path.join(app.root_path, 'output')
+            os.makedirs(output_dir, exist_ok=True)
+            
+            timestamp = int(datetime.now().timestamp())
+            filename = f"converted_{current_user.id}_{timestamp}.pdf"
+            filepath = os.path.join(output_dir, filename)
+
+            pdfkit.from_string(final_html, filepath, configuration=PDFKIT_CONFIG)
+
+            return send_from_directory(output_dir, filename, as_attachment=True)
+
+        except Exception as e:
+            logging.error(f"PDF conversion failed: {e}")
+            flash(f"An error occurred during PDF conversion: {e}", 'danger')
+            # Using render_template to show the error on the same page without losing content
+            return render_template('convert.html', error=str(e))
+
+    return render_template('convert.html')
+
+
 
 @app.route('/')
 @login_required
@@ -309,6 +381,41 @@ def submit_job():
                 'status': 'error',
                 'message': 'Job description is required'
             }), 400
+        
+        # --- Step 1: Extract Job Title and Company from Job Description ---
+        try:
+            # A more specific prompt to get structured data
+            job_info_prompt = f"""
+            Analyze the following job description and extract the job title and the company name.
+            Return the information in a JSON object with the keys "job_title" and "company_name".
+            If a value is not found, return "N/A".
+
+            Job Description:
+            ---
+            {job_description}
+            ---
+            """
+            job_info_response = model.generate_content(job_info_prompt)
+            # Clean up the response to get a valid JSON string
+            json_text = re.sub(r'```json\s*|\s*```', '', job_info_response.text.strip())
+            job_info = json.loads(json_text)
+            job_title = job_info.get('job_title', 'Job')
+            company_name = job_info.get('company_name', 'Company')
+        except Exception as e:
+            logging.error(f"Error extracting job info: {e}")
+            # Fallback to generic names if extraction fails
+            job_title = "Job"
+            company_name = "Company"
+
+        # --- Sanitize job title for filename ---
+        def sanitize_filename(name):
+            # Remove invalid characters
+            name = re.sub(r'[\\/*?:"<>|]', "", name)
+            # Replace spaces with underscores
+            name = name.replace(' ', '_')
+            return name
+
+        safe_job_title = sanitize_filename(job_title)
 
         # Get CV data from database
         personal_info = PersonalInfo.query.first()
@@ -320,6 +427,8 @@ def submit_job():
                 'status': 'error',
                 'message': 'No CV data found. Please create your CV first.'
             }), 404
+        
+        
 
         # Prepare CV data
         cv_data = {
@@ -474,7 +583,7 @@ def submit_job():
                 'no-outline': None,
                 'enable-local-file-access': None
             })
-            cv_filename = f'cv_{timestamp}.pdf'
+            cv_filename = f'cv_{safe_job_title}_{timestamp}.pdf'
             cv_path = os.path.join(output_dir, cv_filename)
             with open(cv_path, 'wb') as f:
                 f.write(cv_pdf)
@@ -490,7 +599,7 @@ def submit_job():
                 'no-outline': None,
                 'enable-local-file-access': None
             })
-            cl_en_filename = f'cover_letter_en_{timestamp}.pdf'
+            cl_en_filename = f'cover_letter_en_{safe_job_title}_{timestamp}.pdf'
             cl_en_path = os.path.join(output_dir, cl_en_filename)
             with open(cl_en_path, 'wb') as f:
                 f.write(cl_en_pdf)
@@ -506,7 +615,7 @@ def submit_job():
                 'no-outline': None,
                 'enable-local-file-access': None
             })
-            cl_zh_filename = f'cover_letter_zh_{timestamp}.pdf'
+            cl_zh_filename = f'cover_letter_zh_{safe_job_title}_{timestamp}.pdf'
             cl_zh_path = os.path.join(output_dir, cl_zh_filename)
             with open(cl_zh_path, 'wb') as f:
                 f.write(cl_zh_pdf)

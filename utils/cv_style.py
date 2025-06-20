@@ -7,7 +7,7 @@ body {
     max-width: 900px;
     margin: 0 auto;
     padding: 30px;
-    background-color: #f8f9fa;
+    background-color: #ffffff;
 }
 
 /* Header Section (Name, Title, Contact) */
