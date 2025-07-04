@@ -100,6 +100,13 @@
             </a>
         </div>
     </div>
+
+    <div class="mt-4">
+        <a id="cv-download" class="btn btn-primary me-2" style="display: none;" target="_blank">Download CV</a>
+        <a id="cl-en-download" class="btn btn-primary me-2" style="display: none;" target="_blank">Download English Cover Letter</a>
+        <a id="cl-zh-download" class="btn btn-primary me-2" style="display: none;" target="_blank">Download Chinese Cover Letter</a>
+        <a id="merged-download" class="btn btn-success" style="display: none;" target="_blank">Download Complete Application Package</a>
+    </div>
 </div>
 {% endblock %}
 
@@ -186,6 +193,8 @@ document.getElementById('jobForm').addEventListener('submit', function(e) {
             document.getElementById('coverLetterEnLink').href = data.files.cover_letter_en_pdf;
             document.getElementById('coverLetterZhLink').href = data.files.cover_letter_zh_pdf;
             
+            updateDownloadLinks(data.files);
+            
             resultSection.style.display = 'block';
             toastr.success('Documents generated successfully!');
         } else {
@@ -231,5 +240,21 @@ document.querySelectorAll('.copy-btn').forEach(button => {
         }
     });
 });
+
+function updateDownloadLinks(files) {
+    document.getElementById('cv-download').href = files.cv_pdf;
+    document.getElementById('cv-download').style.display = 'inline-block';
+    
+    document.getElementById('cl-en-download').href = files.cover_letter_en_pdf;
+    document.getElementById('cl-en-download').style.display = 'inline-block';
+    
+    document.getElementById('cl-zh-download').href = files.cover_letter_zh_pdf;
+    document.getElementById('cl-zh-download').style.display = 'inline-block';
+
+    if (files.merged_pdf) {
+        document.getElementById('merged-download').href = files.merged_pdf;
+        document.getElementById('merged-download').style.display = 'inline-block';
+    }
+}
 </script>
 {% endblock %} 
