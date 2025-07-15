@@ -17,9 +17,15 @@ from utils.cv_style import cv_styles
 from utils.generic_style import generic_styles
 from PyPDF2 import PdfMerger
 from functools import wraps
+import openai
 
 # Load environment variables
 load_dotenv()
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+openai.api_key = OPENAI_API_KEY
+OPENAI_MODEL = os.getenv('CHATGPT_MODEL', 'gpt-4o-mini')
+
 
 # Configure API key
 API_KEY = os.getenv('API_KEY', 'your-default-api-key-here')
@@ -533,6 +539,38 @@ def json_to_cl_markdown(data):
     ]
     return "\\n\\n".join(filter(None, parts))
 
+def unified_generate_content(prompt, model_type='gemini', **kwargs):
+    """
+    Try Gemini first, fallback to OpenAI on 429/500 errors.
+    """
+    try:
+        if model_type == 'gemini':
+            response = model.generate_content(prompt, **kwargs)
+            return response
+    except Exception as e:
+        # Gemini API error handling
+        if hasattr(e, 'status_code') and e.status_code in [429, 500]:
+            logging.warning(f"Gemini error {e.status_code}, fallback to OpenAI.")
+        elif '429' in str(e) or '500' in str(e):
+            logging.warning(f"Gemini error: {e}, fallback to OpenAI.")
+        else:
+            raise  # Other errors不處理
+        # fallback to OpenAI
+        try:
+            completion = openai.ChatCompletion.create(
+                model=OPENAI_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=kwargs.get('temperature', 0.7),
+                max_tokens=kwargs.get('max_tokens', 2048)
+            )
+            class DummyResponse:
+                def __init__(self, text):
+                    self.text = text
+            return DummyResponse(completion.choices[0].message.content)
+        except Exception as oe:
+            logging.error(f"OpenAI fallback also failed: {oe}")
+            raise
+
 def process_job_application(job_description, job_source='indeed'):
     """Process job application and generate all necessary documents."""
     try:
@@ -548,7 +586,7 @@ def process_job_application(job_description, job_source='indeed'):
             {job_description}
             ---
             """
-            job_info_response = model.generate_content(job_info_prompt)
+            job_info_response = unified_generate_content(job_info_prompt)
             json_text = re.sub(r'```json\s*|\s*```', '', job_info_response.text.strip())
             job_info = json.loads(json_text)
             job_title = job_info.get('job_title', 'Job')
@@ -617,21 +655,21 @@ def process_job_application(job_description, job_source='indeed'):
         # Generate documents
         from prompts.cv_prompt import get_cv_prompt
         cv_prompt = get_cv_prompt(job_details, cv_data)
-        cv_response = model.generate_content(cv_prompt)
+        cv_response = unified_generate_content(cv_prompt)
         cv_json = clean_and_parse_json(cv_response.text)
         cv_md = json_to_cv_markdown(cv_json)
         cv_md = cv_md.replace("\\n", "\n")
 
         from prompts.cl_prompt import get_cl_prompt
         cl_prompt = get_cl_prompt(job_details, cv_data)
-        cl_response = model.generate_content(cl_prompt)
+        cl_response = unified_generate_content(cl_prompt)
         cl_json = clean_and_parse_json(cl_response.text)
         cover_letter_md = json_to_cl_markdown(cl_json)
         cover_letter_md = cover_letter_md.replace("\\n", "\n")
 
         from prompts.cn_prompt import get_cn_prompt
         cn_prompt = get_cn_prompt(cover_letter_md)
-        cn_response = model.generate_content(cn_prompt)
+        cn_response = unified_generate_content(cn_prompt)
         chinese_cover_letter_md = cn_response.text.strip()
         chinese_cover_letter_md = chinese_cover_letter_md.replace("\\n", "\n")
 
