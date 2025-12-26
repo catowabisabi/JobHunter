@@ -1,200 +1,103 @@
 # 智能求職助手 Smart Job Application Assistant
 
-[繁體中文](#繁體中文說明) | [English](#english-description)
+[繁體中文說明](#繁體中文說明) | [English Description](#english-description)
+
+---
 
 ## 繁體中文說明
 
-### 功能簡介
-這是一個智能求職助手應用程式，幫助您管理個人簡歷並自動生成求職文件。主要功能包括：
+### 專案簡介
+智能求職助手協助整理個人履歷資料、管理求職流程並透過 Google Gemini 與 OpenAI 模型自動生成履歷、求職信與 PDF 檔案。新版部署流程以 TrueNAS SCALE + Docker 為核心，方便集中管理與備份。
 
-1. 個人資料管理
-   - 編輯和保存個人基本資料
-   - 管理工作經驗
-   - 管理教育背景
-   - 自動生成當日日期的 JSON 格式簡歷
-
-2. 智能求職文件生成
-   - 貼上職位描述自動分析
-   - 使用 Google Gemini AI 生成：
-     - 針對職位優化的簡歷
-     - 英文求職信
-     - 中文求職信
-   - 自動保存所有文件（PDF 和 Markdown 格式）
-
-### 安裝說明
-
-1. 系統要求
-   ```
-   Python 3.9 或以上（由於 google-generativeai 套件的要求）
-   pip 或 Conda（Python 包管理器）
-   wkhtmltopdf（PDF 生成工具）
-   ```
-
-2. 安裝 wkhtmltopdf
-   - Windows：從 https://wkhtmltopdf.org/downloads.html 下載安裝
-   - macOS：`brew install wkhtmltopdf`
-   - Linux：`sudo apt-get install wkhtmltopdf`
-
-3. 選擇安裝方式：
-
-   使用 pip：
+### TrueNAS SCALE 部署流程
+1. **準備資料集**：在 TrueNAS SCALE 建立兩個目錄或資料集，分別存放 `instance`（SQLite 與使用者上傳資料）及 `output`（匯出檔案）。記錄它們的完整路徑，例如 `/mnt/tank/apps/jobhunter/instance` 與 `/mnt/tank/apps/jobhunter/output`。
+2. **放置專案檔案**：將此專案資料夾（含 [Dockerfile](Dockerfile)、[docker-compose.yml](docker-compose.yml)、[requirements.txt](requirements.txt)）上傳到 TrueNAS SCALE 可存取的路徑，例如 `/mnt/tank/apps/jobhunter/app`。
+3. **建立環境變數檔**：在專案根目錄建立 `.env`，內容可參考下列範例：
    ```bash
-   pip install -r requirements.txt
+   GOOGLE_API_KEY=your-google-api-key
+   GEMINI_MODEL=gemini-1.5-pro
+   OPENAI_API_KEY=your-openai-api-key
+   CHATGPT_MODEL=gpt-4o-mini
+   API_KEY=replace-with-request-key
+   SECRET_KEY=replace-with-flask-secret
    ```
-
-   或使用 Conda：
+4. **調整掛載路徑**：在 [docker-compose.yml](docker-compose.yml) 設定以下環境變數（可寫入 `.env` 或在 TrueNAS UI 輸入）：
    ```bash
-   # 創建新的 Conda 環境（使用 Python 3.9 或更高版本）
-   conda create -n jobhunter python=3.9
-   
-   # 啟動環境
-   conda activate jobhunter
-   
-   # 安裝依賴包
-   conda install -c conda-forge flask=3.0.2
-   conda install -c conda-forge python-dotenv=1.0.1
-   conda install -c conda-forge markdown2=2.4.12
-   pip install google-generativeai==0.3.2
-   pip install pdfkit==1.0.0
-   pip install sqlite3worker==1.1.7
-   pip install flask-sqlalchemy==3.1.1
+   JOBHUNTER_INSTANCE_PATH=/mnt/tank/apps/jobhunter/instance
+   JOBHUNTER_OUTPUT_PATH=/mnt/tank/apps/jobhunter/output
    ```
-
-4. 設置環境變數
-   - 創建 `.env` 檔案
-   - 添加 Google Gemini API 金鑰：
-     ```
-     GOOGLE_API_KEY=your_api_key_here
-     ```
-
-### 使用說明
-
-1. 啟動應用程式
-   
-   如果使用 pip：
+   若未提供，Compose 會 fallback 到容器內的預設 `./instance` 與 `./output`。
+5. **建置與啟動容器**：在 TrueNAS SCALE Shell 或自動化任務執行：
    ```bash
-   python app.py
+   cd /mnt/tank/apps/jobhunter/app
+   docker compose up -d --build
    ```
+6. **驗證服務**：瀏覽 `http://<TrueNAS-IP>:5001/login`，首次登入預設帳號 `admin` 密碼 `Love2025`（建議立即變更）。
 
-   如果使用 Conda：
-   ```bash
-   conda activate jobhunter
-   python app.py
-   ```
+### 重要設定
+- `WKHTMLTOPDF_PATH` 已在容器內預設為 `/usr/bin/wkhtmltopdf`，若自行部署於其他環境，可透過環境變數覆寫。
+- `JOBHUNTER_INSTANCE_PATH` 與 `JOBHUNTER_OUTPUT_PATH` 決定資料持久化位置，請務必對應至 TrueNAS 的 ZFS 資料集。
+- 若需設定 HTTPS 或反向代理，可在 TrueNAS SCALE 內再建立 Traefik/Nginx 容器。
 
-2. 訪問網頁界面
-   - 打開瀏覽器訪問：`http://localhost:5000`
+### 手動開發環境（可選）
+仍可於本地環境使用 `python -m venv` 或 Conda 建立虛擬環境並執行：
+```bash
+pip install -r requirements.txt
+python app_04.py
+```
+若要產生 PDF，請自行安裝 wkhtmltopdf 並設定 `WKHTMLTOPDF_PATH`。
 
-3. 個人資料管理
-   - 點擊「個人資料」頁面
-   - 填寫或更新您的資料
-   - 點擊「保存資料」按鈕
-
-4. 生成求職文件
-   - 點擊「職位申請」頁面
-   - 貼上完整職位描述
-   - 點擊「生成申請文件」
-   - 等待系統生成文件
-   - 下載生成的 PDF 文件
-
-### 注意事項
-- 首次使用時，如果有 `cv.json` 檔案，系統會自動導入資料
-- 所有生成的文件都保存在 `output` 目錄下
-- 文件名格式：`公司名_職位名_時間戳`
+### 疑難排解
+- **PDF 轉檔失敗**：確認 `wkhtmltopdf` 是否存在，並檢查 `.env` 裡的 `WKHTMLTOPDF_PATH`。
+- **AI 呼叫失敗**：檢查 `.env` 中的 API Key 是否有效、配額是否足夠。
+- **資料未保存**：確認 TrueNAS 掛載路徑對容器具備讀寫權限。
 
 ---
 
 ## English Description
 
-### Features
-This is a smart job application assistant that helps you manage your CV and automatically generate job application documents. Main features include:
+### Overview
+The Smart Job Application Assistant manages résumé data, guides job applications, and leverages Google Gemini plus OpenAI models to produce tailored résumés, cover letters, and PDFs. The recommended deployment now targets TrueNAS SCALE with Docker for easy maintenance and backups.
 
-1. Personal Information Management
-   - Edit and save personal information
-   - Manage work experience
-   - Manage educational background
-   - Auto-generate JSON format CV with current date
-
-2. Smart Job Application Document Generation
-   - Analyze job descriptions automatically
-   - Use Google Gemini AI to generate:
-     - Position-optimized CV
-     - English cover letter
-     - Chinese cover letter
-   - Auto-save all documents (PDF and Markdown formats)
-
-### Installation
-
-1. System Requirements
-   ```
-   Python 3.9 or above (required by google-generativeai package)
-   pip or Conda (Python package manager)
-   wkhtmltopdf (PDF generation tool)
-   ```
-
-2. Install wkhtmltopdf
-   - Windows: Download from https://wkhtmltopdf.org/downloads.html
-   - macOS: `brew install wkhtmltopdf`
-   - Linux: `sudo apt-get install wkhtmltopdf`
-
-3. Choose Installation Method:
-
-   Using pip:
+### Deploying on TrueNAS SCALE
+1. **Prepare datasets**: Create two TrueNAS datasets or directories for persistent storage: one for `instance` (SQLite database and uploads) and another for `output` (generated documents). Record their absolute paths, such as `/mnt/tank/apps/jobhunter/instance` and `/mnt/tank/apps/jobhunter/output`.
+2. **Upload project files**: Copy the repository (including [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml), and [requirements.txt](requirements.txt)) to a location accessible by TrueNAS, for example `/mnt/tank/apps/jobhunter/app`.
+3. **Create the environment file**: Inside the project folder add a `.env` file using the template below:
    ```bash
-   pip install -r requirements.txt
+   GOOGLE_API_KEY=your-google-api-key
+   GEMINI_MODEL=gemini-1.5-pro
+   OPENAI_API_KEY=your-openai-api-key
+   CHATGPT_MODEL=gpt-4o-mini
+   API_KEY=replace-with-request-key
+   SECRET_KEY=replace-with-flask-secret
    ```
-
-   Or using Conda:
+4. **Configure volume bindings**: Define the following variables (either in `.env` or via the TrueNAS UI) so Docker mounts the datasets correctly:
    ```bash
-   # Create new Conda environment (using Python 3.9 or above)
-   conda create -n jobhunter python=3.9
-   
-   # Activate environment
-   conda activate jobhunter
-   
-   # Install dependencies
-   pip install uv
-   uv pip install flask python-dotenv markdown2 google-generativeai pdfkit sqlite3worker flask-sqlalchemy
+   JOBHUNTER_INSTANCE_PATH=/mnt/tank/apps/jobhunter/instance
+   JOBHUNTER_OUTPUT_PATH=/mnt/tank/apps/jobhunter/output
    ```
-
-4. Set Environment Variables
-   - Create `.env` file
-   - Add Google Gemini API key:
-     ```
-     GOOGLE_API_KEY=your_api_key_here
-     ```
-
-### Usage Instructions
-
-1. Start the Application
-   
-   If using pip:
+   Without these values the compose file falls back to relative paths inside the container.
+5. **Build and start the stack**: From the TrueNAS SCALE shell execute:
    ```bash
-   python app.py
+   cd /mnt/tank/apps/jobhunter/app
+   docker compose up -d --build
    ```
+6. **Confirm the service**: Visit `http://<truenas-ip>:5001/login`. The default credentials are `admin` / `Love2025`; change them immediately after signing in.
 
-   If using Conda:
-   ```bash
-   conda activate jobhunter
-   python app.py
-   ```
+### Key configuration notes
+- `WKHTMLTOPDF_PATH` defaults to `/usr/bin/wkhtmltopdf` inside the container. Override it via environment variable if your platform stores the binary elsewhere.
+- `JOBHUNTER_INSTANCE_PATH` and `JOBHUNTER_OUTPUT_PATH` control persistence. Always point them to ZFS datasets so backups and snapshots work as expected.
+- For TLS or reverse proxy, pair this service with Traefik or Nginx within TrueNAS SCALE.
 
-2. Access Web Interface
-   - Open browser and visit: `http://localhost:5000`
+### Optional local development
+You can still run the project directly on a workstation:
+```bash
+pip install -r requirements.txt
+python app_04.py
+```
+Install wkhtmltopdf manually and export `WKHTMLTOPDF_PATH` if you need PDF generation outside the container.
 
-3. Personal Information Management
-   - Click on "Personal Information" page
-   - Fill in or update your information
-   - Click "Save Data" button
-
-4. Generate Job Application Documents
-   - Click on "Job Application" page
-   - Paste complete job description
-   - Click "Generate Application Documents"
-   - Wait for system to generate documents
-   - Download generated PDF files
-
-### Notes
-- If `cv.json` exists when first using the system, data will be automatically imported
-- All generated documents are saved in the `output` directory
-- File naming format: `company_name_position_timestamp` 
+### Troubleshooting
+- **PDF rendering errors**: ensure `wkhtmltopdf` is installed and the `WKHTMLTOPDF_PATH` variable points to the binary.
+- **AI request failures**: verify the API keys saved in `.env` and confirm you have remaining quota.
+- **Missing data**: double-check that the mounted dataset paths grant read/write permissions to the container user.

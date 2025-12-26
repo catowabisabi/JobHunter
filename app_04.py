@@ -55,7 +55,8 @@ GEMINI_MODEL = os.getenv('GEMINI_MODEL')
 model = genai.GenerativeModel(GEMINI_MODEL)
 
 # Configure PDFKit
-PDFKIT_CONFIG = pdfkit.configuration(wkhtmltopdf='C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
+WKHTMLTOPDF_PATH = os.getenv('WKHTMLTOPDF_PATH', r'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
+PDFKIT_CONFIG = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_PATH)
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 

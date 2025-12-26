@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  jobhunter:
+    build:
+      context: .
+    image: jobhunter-app:latest
+    container_name: jobhunter-app
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+      - WKHTMLTOPDF_PATH=/usr/bin/wkhtmltopdf
+    volumes:
+      - ${JOBHUNTER_INSTANCE_PATH:-./instance}:/app/instance
+      - ${JOBHUNTER_OUTPUT_PATH:-./output}:/app/output
